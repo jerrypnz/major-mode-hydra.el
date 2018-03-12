@@ -60,7 +60,7 @@
          (hydra (major-mode-hydra--get-or-recompile mode)))
     (if hydra
         (call-interactively hydra)
-      (message "Major mode hydra not found for %s" mode))))
+      (user-error "Major mode hydra not found for %s" mode))))
 
 (provide 'major-mode-hydra)
 
