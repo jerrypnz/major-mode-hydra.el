@@ -6,7 +6,7 @@
 ;; URL: https://github.com/jerrypnz/major-mode-hydra.el
 ;; Keywords: hydra
 ;; Version: 0.1.0
-;; Package-Requires: ((dash "2.12.1") (pretty-hydra "0.1.0"))
+;; Package-Requires: ((dash "2.12.1"))
 
 ;; This file is NOT part of GNU Emacs.
 
