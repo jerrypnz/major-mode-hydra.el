@@ -33,18 +33,18 @@
 (require 's)
 (require 'hydra)
 
-(defun pretty-hydra--calc-column-width (group-name heads)
+(defun pretty-hydra--calc-column-width (column-name heads)
   (->> heads
        (-map (-lambda ((key _ hint))
                (cond
                 ((char-or-string-p hint) (+ 7 (length key) (length hint))) ;; string hint
                 ((or (null hint) (symbolp hint)) 0) ;; no hint
                 (t 17))))   ;; dynamic hint (TODO trim to 10 chars long)
-       (cons (+ 2 (length group-name)))
+       (cons (+ 2 (length column-name)))
        -max))
 
-(defun pretty-hydra--gen-heads-docstring (group-name heads max-heads)
-  (-let ((column-len (pretty-hydra--calc-column-width group-name heads)))
+(defun pretty-hydra--gen-heads-docstring (column-name heads max-heads)
+  (-let ((column-len (pretty-hydra--calc-column-width column-name heads)))
     (-as-> heads docs
            (-mapcat (-lambda ((key _ hint))
                       (cond
@@ -55,7 +55,7 @@
                        (t  ;; dynamic hint (TODO trim to 10 chars long)
                         (list (format " [_%s_] ?%s?" key key)))))
                     docs)
-           (-concat (list (format " %s^^" group-name)
+           (-concat (list (format " %s^^" column-name)
                           (format "%s" (s-pad-right column-len "─" "")))
                     docs
                     ;; Add empty rows if it doesn't have as many heads in this column
@@ -63,13 +63,13 @@
            (-map (lambda (doc) (s-pad-right column-len " " doc)) docs))))
 
 (defun pretty-hydra--gen-body-docstring (hydra-plist)
-  (-let* ((head-groups (-partition 2 hydra-plist))
-          (max-heads (->> head-groups
+  (-let* ((head-columns (-partition 2 hydra-plist))
+          (max-heads (->> head-columns
                           (-map (-lambda ((_ heads)) (length heads)))
                           -max))
-          (head-docstrings (-map (-lambda ((group-name heads))
-                                   (pretty-hydra--gen-heads-docstring group-name heads max-heads))
-                                 head-groups)))
+          (head-docstrings (-map (-lambda ((column-name heads))
+                                   (pretty-hydra--gen-heads-docstring column-name heads max-heads))
+                                 head-columns)))
     (->> head-docstrings
          (apply #'-zip)
          (-map-indexed (lambda (i ss)
