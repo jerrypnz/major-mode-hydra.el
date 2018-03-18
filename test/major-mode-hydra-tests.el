@@ -27,15 +27,10 @@
 
 (require 'major-mode-hydra)
 
-;;TODO Remove me
 (setq major-mode-hydra--heads-alist
-      '((emacs-lisp-mode . ("Test Emacs"      (("v" emacs-version "Emacs Version"))))
-        (restclient-mode . ("Test RestClient" (("v" emacs-version "Emacs Version"))))))
+      '((emacs-lisp-mode . ("Test Emacs"      (("v" emacs-version "Emacs Version"))))))
 
-;; TODO Remove me
-(major-mode-hydra--get-or-recompile 'restclient-mode)
-
-;; TODO Add proper tests
+;;(ert-deftest major-mode-hydra-tests--recomiple)
 
 (provide 'major-mode-hydra-tests)
 
