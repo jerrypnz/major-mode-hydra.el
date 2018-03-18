@@ -54,13 +54,37 @@
         (setf (alist-get mode major-mode-hydra--body-cache) hydra)
         hydra))))
 
+(defun major-mode-hydra--update-heads (heads-plist column key command hint)
+  (-if-let (existing (major-mode-hydra--get-existing-binding heads-plist key))
+      (progn
+        (message "\"%s\" has already been bound to %s" (car existing) (cadr existing))
+        heads-plist)
+    (-let [column-heads (lax-plist-get heads-plist column)]
+      (lax-plist-put heads-plist
+                     column
+                     (nconc column-heads `((,key ,command ,hint)))))))
+
+(defun major-mode-hydra--get-existing-binding (heads-plist key)
+  (-as-> heads-plist x
+         (-slice x 1 (length x) 2)
+         (-mapcat #'identity x)
+         (assoc key x)))
+
+(defun major-mode-hydra-bind-key (mode column key command &optional hint)
+  (-as-> (alist-get mode major-mode-hydra--heads-alist) heads-plist
+         (major-mode-hydra--update-heads heads-plist
+                                         column key command
+                                         (or hint (symbol-name command)))
+         (setf (alist-get mode major-mode-hydra--heads-alist)
+               heads-plist)))
+
 (defun major-mode-hydra ()
   (interactive)
   (let* ((mode major-mode)
          (hydra (major-mode-hydra--get-or-recompile mode)))
     (if hydra
         (call-interactively hydra)
-      (user-error "Major mode hydra not found for %s" mode))))
+      (message "Major mode hydra not found for %s" mode))))
 
 (provide 'major-mode-hydra)
 
