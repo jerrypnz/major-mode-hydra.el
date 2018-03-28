@@ -40,43 +40,42 @@
   `major-mode-hydra--heads-alist' is changed, the hydra for
   the mode gets recompiled.")
 
-(defun major-mode-hydra--recompile (mode heads-plist)
+(defun major-mode-hydra--recompile (mode heads)
   (let ((hydra-name (make-symbol (format "major-mode-hydras/%s" mode)))
         ;; By default, exit hydra after invoking a head and warn if a foreign key is pressed.
-        (hydra-body '(:exit t :hint nil :foreign-keys warn)))
-    (eval `(pretty-hydra-define ,hydra-name ,hydra-body ,heads-plist))))
+        (hydra-body '(:exit t :hint nil :foreign-keys warn))
+        ;; Convert heads to a plist that `pretty-hydra-define' expects.
+        (hydra-heads-plist (->> heads
+                                reverse
+                                (-group-by #'car)
+                                (-mapcat (-lambda ((column . heads)) (list column (-map #'cdr heads)))))))
+    (eval `(pretty-hydra-define ,hydra-name ,hydra-body ,hydra-heads-plist))))
 
 (defun major-mode-hydra--get-or-recompile (mode)
   (-if-let (hydra (alist-get mode major-mode-hydra--body-cache))
       hydra
-    (-when-let (heads-plist (alist-get mode major-mode-hydra--heads-alist))
-      (let ((hydra (major-mode-hydra--recompile mode heads-plist)))
+    (-when-let (heads (alist-get mode major-mode-hydra--heads-alist))
+      (let ((hydra (major-mode-hydra--recompile mode heads)))
         (setf (alist-get mode major-mode-hydra--body-cache) hydra)
         hydra))))
 
-(defun major-mode-hydra--update-heads (heads-plist column key command hint)
-  (-if-let (existing (major-mode-hydra--get-existing-binding heads-plist key))
+(defun major-mode-hydra--update-heads (heads column key command hint)
+  (-if-let ((_ _ cmd) (-first (lambda (h) (equal (cadr h) key)) heads))
       (progn
-        (message "\"%s\" has already been bound to %s" (car existing) (cadr existing))
-        heads-plist)
-    (-let [column-heads (lax-plist-get heads-plist column)]
-      (lax-plist-put heads-plist
-                     column
-                     (nconc column-heads `((,key ,command ,hint)))))))
-
-(defun major-mode-hydra--get-existing-binding (heads-plist key)
-  (-as-> heads-plist x
-         (-slice x 1 (length x) 2)
-         (-mapcat #'identity x)
-         (assoc key x)))
+        (message "\"%s\" has already been bound to %s" key cmd)
+        heads)
+    (cons `(,column ,key ,command ,hint) heads)))
 
 (defun major-mode-hydra-bind-key (mode column key command &optional hint)
-  (-as-> (alist-get mode major-mode-hydra--heads-alist) heads-plist
-         (major-mode-hydra--update-heads heads-plist
+  (-as-> (alist-get mode major-mode-hydra--heads-alist) heads
+         (major-mode-hydra--update-heads heads
                                          column key command
                                          (or hint (symbol-name command)))
          (setf (alist-get mode major-mode-hydra--heads-alist)
-               heads-plist)))
+               heads))
+  ;; Invalidate cached hydra for the mode
+  (setq major-mode-hydra--body-cache
+        (assq-delete-all mode major-mode-hydra--body-cache)))
 
 (defun major-mode-hydra ()
   (interactive)
