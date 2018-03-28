@@ -59,18 +59,20 @@
         (setf (alist-get mode major-mode-hydra--body-cache) hydra)
         hydra))))
 
-(defun major-mode-hydra--update-heads (heads column key command hint)
-  (-if-let ((_ _ cmd) (-first (lambda (h) (equal (cadr h) key)) heads))
-      (progn
-        (message "\"%s\" has already been bound to %s" key cmd)
-        heads)
-    (cons `(,column ,key ,command ,hint) heads)))
+(defun major-mode-hydra--update-heads (heads column bindings)
+  (-reduce-from (-lambda (heads (key command hint))
+                  (setq hint (or hint (symbol-name command)))
+                  (-if-let ((_ _ cmd) (-first (lambda (h) (equal (cadr h) key)) heads))
+                      (progn
+                        (message "\"%s\" has already been bound to %s" key cmd)
+                        heads)
+                    (cons `(,column ,key ,command ,hint) heads)))
+                heads
+                bindings))
 
-(defun major-mode-hydra-bind-key (mode column key command &optional hint)
+(defun major-mode-hydra-bind-key (mode column &rest bindings)
   (-as-> (alist-get mode major-mode-hydra--heads-alist) heads
-         (major-mode-hydra--update-heads heads
-                                         column key command
-                                         (or hint (symbol-name command)))
+         (major-mode-hydra--update-heads heads column bindings)
          (setf (alist-get mode major-mode-hydra--heads-alist)
                heads))
   ;; Invalidate cached hydra for the mode
@@ -86,5 +88,4 @@
       (message "Major mode hydra not found for %s" mode))))
 
 (provide 'major-mode-hydra)
-
 ;;; major-mode-hydra.el ends here
