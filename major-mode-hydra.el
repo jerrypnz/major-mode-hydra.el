@@ -70,7 +70,7 @@
                 heads
                 bindings))
 
-(defun major-mode-hydra-bind-key (mode column &rest bindings)
+(defun major-mode-hydra--bind-key (mode column bindings)
   (-as-> (alist-get mode major-mode-hydra--heads-alist) heads
          (major-mode-hydra--update-heads heads column bindings)
          (setf (alist-get mode major-mode-hydra--heads-alist)
@@ -79,6 +79,14 @@
   (setq major-mode-hydra--body-cache
         (assq-delete-all mode major-mode-hydra--body-cache)))
 
+;; Use a macro so that it's not necessary to quote things
+(defmacro major-mode-hydra-bind (mode column &rest body)
+  (declare (indent defun) (doc-string 3))
+  (let ((bindings (-map (lambda (binding)
+                          `(list ,@binding))
+                        body)))
+    `(major-mode-hydra--bind-key ',mode ,column (list ,@bindings))))
+
 (defun major-mode-hydra ()
   (interactive)
   (let* ((mode major-mode)
@@ -86,6 +94,7 @@
     (if hydra
         (call-interactively hydra)
       (message "Major mode hydra not found for %s" mode))))
+
 
 (provide 'major-mode-hydra)
 ;;; major-mode-hydra.el ends here
