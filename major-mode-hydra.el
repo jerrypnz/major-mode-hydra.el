@@ -60,13 +60,16 @@
         hydra))))
 
 (defun major-mode-hydra--update-heads (heads column bindings)
-  (-reduce-from (-lambda (heads (key command hint))
-                  (setq hint (or hint (symbol-name command)))
-                  (-if-let ((_ _ cmd) (-first (lambda (h) (equal (cadr h) key)) heads))
-                      (progn
-                        (message "\"%s\" has already been bound to %s" key cmd)
-                        heads)
-                    (cons `(,column ,key ,command ,hint) heads)))
+  (-reduce-from (-lambda (heads (key command . hint-and-plist))
+                  (-let [(hint . plist) (if (and (car hint-and-plist)
+                                                 (not (keywordp (car hint-and-plist))))
+                                            hint-and-plist
+                                          (cons (symbol-name command) hint-and-plist))]
+                    (-if-let ((_ _ cmd) (-first (lambda (h) (equal (cadr h) key)) heads))
+                        (progn
+                          (message "\"%s\" has already been bound to %s" key cmd)
+                          heads)
+                      (cons `(,column ,key ,command ,hint ,@plist) heads))))
                 heads
                 bindings))
 
@@ -79,13 +82,17 @@
   (setq major-mode-hydra--body-cache
         (assq-delete-all mode major-mode-hydra--body-cache)))
 
+(defun major-mode-hydra--unbind-all (mode)
+  "Remove all the hydra heads for the given mode. Introduced for testing."
+  (setq major-mode-hydra--body-cache
+        (assq-delete-all mode major-mode-hydra--body-cache))
+  (setq major-mode-hydra--heads-alist
+        (assq-delete-all mode major-mode-hydra--heads-alist)))
+
 ;; Use a macro so that it's not necessary to quote things
 (defmacro major-mode-hydra-bind (mode column &rest body)
   (declare (indent defun) (doc-string 3))
-  (let ((bindings (-map (lambda (binding)
-                          `(list ,@binding))
-                        body)))
-    `(major-mode-hydra--bind-key ',mode ,column (list ,@bindings))))
+  `(major-mode-hydra--bind-key ',mode ,column ',body))
 
 (defun major-mode-hydra ()
   (interactive)
@@ -94,7 +101,6 @@
     (if hydra
         (call-interactively hydra)
       (message "Major mode hydra not found for %s" mode))))
-
 
 (provide 'major-mode-hydra)
 ;;; major-mode-hydra.el ends here

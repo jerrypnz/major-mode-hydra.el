@@ -30,21 +30,35 @@
 (ert-deftest major-mode-hydra-tests--bind-key--empty-heads-alist ()
   (let ((major-mode-hydra--heads-alist nil))
     (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("v" #'emacs-version "Emacs Version"))
+      ("v" emacs-version "Emacs Version"))
     (should (equal major-mode-hydra--heads-alist
                    '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "Emacs Version")))))))
 
 (ert-deftest major-mode-hydra-tests--bind-key--cmd-name-as-hint ()
   (let ((major-mode-hydra--heads-alist nil))
     (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("v" #'emacs-version))
+      ("v" emacs-version))
     (should (equal major-mode-hydra--heads-alist
                    '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))))
+
+(ert-deftest major-mode-hydra-tests--bind-key--head-opts ()
+  (let ((major-mode-hydra--heads-alist nil))
+    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
+      ("v" emacs-version :exit nil :color red))
+    (should (equal major-mode-hydra--heads-alist
+                   '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version" :exit nil :color red)))))))
+
+(ert-deftest major-mode-hydra-tests--bind-key--hint-and-head-opts ()
+  (let ((major-mode-hydra--heads-alist nil))
+    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
+      ("v" emacs-version "Emacs Version" :exit nil :color red))
+    (should (equal major-mode-hydra--heads-alist
+                   '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "Emacs Version" :exit nil :color red)))))))
 
 (ert-deftest major-mode-hydra-tests--bind-key--add-head-to-existing-column ()
   (let ((major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))
     (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("b" #'foobar "Foobar"))
+      ("b" foobar "Foobar"))
     (should (equal major-mode-hydra--heads-alist
                    '((emacs-lisp-mode ("Test Emacs" "b" foobar "Foobar")
                                       ("Test Emacs" "v" emacs-version "emacs-version")))))))
@@ -52,7 +66,7 @@
 (ert-deftest major-mode-hydra-tests--bind-key--new-column ()
   (let ((major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))
     (major-mode-hydra-bind emacs-lisp-mode "Foo"
-      ("b" #'foobar "Foobar"))
+      ("b" foobar "Foobar"))
     (should (equal major-mode-hydra--heads-alist
                    '((emacs-lisp-mode ("Foo"        "b" foobar "Foobar")
                                       ("Test Emacs" "v" emacs-version "emacs-version")))))))
@@ -60,7 +74,7 @@
 (ert-deftest major-mode-hydra-tests--bind-key--duplicate-key ()
   (let ((major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))
     (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("v" #'foobar "Foobar"))
+      ("v" foobar "Foobar"))
     (should (equal major-mode-hydra--heads-alist
                    '((emacs-lisp-mode  ("Test Emacs" "v" emacs-version "emacs-version")))))))
 
