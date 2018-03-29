@@ -1,14 +1,10 @@
 ## Description
 
-This is a package for GNU Emacs that allows you to define major mode
-specific [hydra
-heads](https://github.com/abo-abo/hydra#awesome-head-1). They get
-compiled to nice-looking hydras and you can bring them up with a
-leader key. It's inspired by [Spacemacs major mode leader
+Inspired by [Spacemacs major mode leader
 key](http://spacemacs.org/doc/DOCUMENTATION.html#major-mode-leader-key)
-and is based on the awesome [hydra](https://github.com/abo-abo/hydra)
-package.
-
+and based on the awesome [hydra](https://github.com/abo-abo/hydra),
+this package offers a better way to manage your major mode specific
+key bindings.
 
 ## Install
 
@@ -29,7 +25,7 @@ directory to the load path:
 (add-to-list 'load-path "/place/where/you/put/it/")
 ```
 
-Then require the package and bind the `major-mode-hydra` to a key:
+then `require` the package and bind the `major-mode-hydra` command to a key:
 
 ```elisp
 (require 'major-mode-hydra)
