@@ -8,15 +8,16 @@ key bindings.
 
 ## Install
 
-This package depends on
-[hydra](https://github.com/abo-abo/hydra). Make sure it's installed
-first.
-
 ### MELPA
 
 Coming soon
 
 ### Manual
+
+This package depends on [hydra](https://github.com/abo-abo/hydra),
+[dash](https://github.com/magnars/dash.el) and
+[s.el](https://github.com/magnars/s.el). Make sure they are installed
+first.
 
 Download the source code and put it wherever you like and add the
 directory to the load path:
