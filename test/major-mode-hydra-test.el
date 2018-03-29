@@ -78,6 +78,20 @@
     (should (equal major-mode-hydra--heads-alist
                    '((emacs-lisp-mode  ("Test Emacs" "v" emacs-version "emacs-version")))))))
 
+(ert-deftest major-mode-hydra-tests--bind-key--nil-cmd ()
+  (let ((major-mode-hydra--heads-alist nil))
+    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
+      ("q" nil "quit"))
+    (should (equal major-mode-hydra--heads-alist
+                   '((emacs-lisp-mode ("Test Emacs" "q" nil "quit")))))))
+
+(ert-deftest major-mode-hydra-tests--bind-key--nil-cmd-no-hint ()
+  (let ((major-mode-hydra--heads-alist nil))
+    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
+      ("q" nil))
+    (should (equal major-mode-hydra--heads-alist
+                   '((emacs-lisp-mode ("Test Emacs" "q" nil "nil")))))))
+
 (provide 'major-mode-hydra-tests)
 
 ;;; major-mode-hydra-tests.el ends here
