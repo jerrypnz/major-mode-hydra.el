@@ -4,9 +4,8 @@
 
 ;; Author: Jerry Peng <pr2jerry@gmail.com>
 ;; URL: https://github.com/jerrypnz/major-mode-hydra.el
-;; Keywords: hydra
 ;; Version: 0.1.0
-;; Package-Requires: ((dash "2.12.1"))
+;; Package-Requires: ((dash "2.12.1") (emacs "25"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -27,6 +26,10 @@
 
 ;;; Commentary:
 
+;; Inspired by Spacemacs major mode leader key and based on the awesome hydra,
+;; this package offers a better way to manage your major mode specific key
+;; bindings.
+
 ;;; Code:
 
 (require 'dash)
@@ -36,9 +39,10 @@
   "An alist holding hydra heads for each major mode, keyed by the mode name.")
 
 (defvar major-mode-hydra--body-cache nil
-  "An alist holding compiled hydras for each major mode. Whenever
-  `major-mode-hydra--heads-alist' is changed, the hydra for
-  the mode gets recompiled.")
+  "An alist holding compiled hydras for each major mode.
+
+Whenever `major-mode-hydra--heads-alist' is changed, the hydra
+for the mode gets recompiled.")
 
 (defun major-mode-hydra--recompile (mode heads)
   (let ((hydra-name (make-symbol (format "major-mode-hydras/%s" mode)))
@@ -83,18 +87,22 @@
         (assq-delete-all mode major-mode-hydra--body-cache)))
 
 (defun major-mode-hydra--unbind-all (mode)
-  "Remove all the hydra heads for the given mode. Introduced for testing."
+  "Remove all the hydra heads for MODE. Introduced for testing."
   (setq major-mode-hydra--body-cache
         (assq-delete-all mode major-mode-hydra--body-cache))
   (setq major-mode-hydra--heads-alist
         (assq-delete-all mode major-mode-hydra--heads-alist)))
 
 ;; Use a macro so that it's not necessary to quote things
+
+;;;###autoload
 (defmacro major-mode-hydra-bind (mode column &rest body)
   (declare (indent defun) (doc-string 3))
   `(major-mode-hydra--bind-key ',mode ,column ',body))
 
+;;;###autoload
 (defun major-mode-hydra ()
+  "Show the hydra for the current major mode."
   (interactive)
   (let* ((mode major-mode)
          (hydra (major-mode-hydra--get-or-recompile mode)))
@@ -103,4 +111,5 @@
       (message "Major mode hydra not found for %s" mode))))
 
 (provide 'major-mode-hydra)
+
 ;;; major-mode-hydra.el ends here
