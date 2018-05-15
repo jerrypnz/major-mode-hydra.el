@@ -4,9 +4,8 @@
 
 ;; Author: Jerry Peng <pr2jerry@gmail.com>
 ;; URL: https://github.com/jerrypnz/major-mode-hydra.el
-;; Keywords: hydra
 ;; Version: 0.1.0
-;; Package-Requires: ((hydra "0.13.4") (s "1.10.0") (dash "2.12.1"))
+;; Package-Requires: ((hydra "0.13.4") (s "1.10.0") (dash "2.12.1") (emacs "24"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -26,6 +25,9 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
+
+;; Provides a macro, `pretty-hydra-define', which defines a hydra with column for each group
+;; of heads.
 
 ;;; Code:
 
@@ -89,6 +91,7 @@
                    (-concat (list key cmd) opts)
                  head)))))
 
+;;;###autoload
 (defmacro pretty-hydra-define (name body heads-plist)
   (declare (indent defun) (doc-string 3))
   (let ((docstring (pretty-hydra--gen-body-docstring heads-plist))
