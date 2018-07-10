@@ -26,8 +26,8 @@
 
 ;;; Commentary:
 
-;; Provides a macro, `pretty-hydra-define', which defines a hydra with column for each group
-;; of heads.
+;; Provides a macro, `pretty-hydra-define', which defines a hydra with
+;; column for each group of heads.
 
 ;;; Code:
 
@@ -45,7 +45,7 @@
        (cons (+ 2 (length column-name)))
        -max))
 
-(defun pretty-hydra--gen-heads-docstring (column-name heads max-heads)
+(defun pretty-hydra--gen-heads-docstring (column-name separator heads max-heads)
   (-let ((column-len (pretty-hydra--calc-column-width column-name heads)))
     (-as-> heads docs
            (-mapcat (-lambda ((key _ hint))
@@ -58,19 +58,19 @@
                         (list (format " [_%s_] ?%s?" key key)))))
                     docs)
            (-concat (list (format " %s^^" column-name)
-                          (format "%s" (s-pad-right column-len "─" "")))
+                          (format "%s" (s-pad-right column-len separator "")))
                     docs
                     ;; Add empty rows if it doesn't have as many heads in this column
                     (-repeat (- max-heads (length docs)) (s-pad-left column-len " " "^^")))
            (-map (lambda (doc) (s-pad-right column-len " " doc)) docs))))
 
-(defun pretty-hydra--gen-body-docstring (hydra-plist)
+(defun pretty-hydra--gen-body-docstring (separator hydra-plist)
   (-let* ((head-columns (-partition 2 hydra-plist))
           (max-heads (->> head-columns
                           (-map (-lambda ((_ heads)) (length heads)))
                           -max))
           (head-docstrings (-map (-lambda ((column-name heads))
-                                   (pretty-hydra--gen-heads-docstring column-name heads max-heads))
+                                   (pretty-hydra--gen-heads-docstring column-name separator heads max-heads))
                                  head-columns)))
     (->> head-docstrings
          (apply #'-zip)
@@ -91,11 +91,28 @@
                    (-concat (list key cmd) opts)
                  head)))))
 
+(defface pretty-hydra-title-face
+  '((t (:inherit 'default :height 1.1)))
+  "Face used to render titles for pretty hydra"
+  :group 'pretty-hydra)
+
+(defun pretty-hydra--title-formatter (title)
+  (lambda (docstring)
+    (s-concat "\n " (propertize title 'face 'pretty-hydra-title-face) "\n" docstring)))
+
 ;;;###autoload
 (defmacro pretty-hydra-define (name body heads-plist)
   (declare (indent defun) (doc-string 3))
-  (let ((docstring (pretty-hydra--gen-body-docstring heads-plist))
-        (heads (pretty-hydra--get-heads heads-plist)))
+  (let* ((separator (or (plist-get body :separator) "─"))
+         (formatter (or (plist-get body :formatter)
+                        (-some-> (plist-get body :title)
+                                 pretty-hydra--title-formatter)
+                        #'identity))
+         (docstring (->> heads-plist
+                         (pretty-hydra--gen-body-docstring separator)
+                         (funcall formatter)
+                         (s-prepend "\n"))) ;; This is required, otherwise the docstring won't show up correctly
+         (heads (pretty-hydra--get-heads heads-plist)))
     `(defhydra ,name ,body
        ,docstring
        ,@heads)))
