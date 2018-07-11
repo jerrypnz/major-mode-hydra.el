@@ -63,7 +63,7 @@ for the mode gets recompiled.")
          (title (when (functionp major-mode-hydra-title-generator)
                   (funcall major-mode-hydra-title-generator mode)))
          ;; By default, exit hydra after invoking a head and warn if a foreign key is pressed.
-         (hydra-body `(:exit t :hint nil :foreign-keys warn :title ,title :separator ,major-mode-hydra-separator))
+         (hydra-body `(:color teal :hint nil :title ,title :separator ,major-mode-hydra-separator))
          ;; Convert heads to a plist that `pretty-hydra-define' expects.
          (hydra-heads-plist (->> heads
                                  reverse

@@ -92,13 +92,13 @@
                  head)))))
 
 (defface pretty-hydra-title-face
-  '((t (:inherit 'default :height 1.1)))
+  '((t (:inherit 'default)))
   "Face used to render titles for pretty hydra"
   :group 'pretty-hydra)
 
 (defun pretty-hydra--title-formatter (title)
   (lambda (docstring)
-    (s-concat "\n " (propertize title 'face 'pretty-hydra-title-face) "\n" docstring)))
+    (s-concat " " (propertize title 'face 'pretty-hydra-title-face) "\n" docstring)))
 
 ;;;###autoload
 (defmacro pretty-hydra-define (name body heads-plist)

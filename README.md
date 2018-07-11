@@ -43,8 +43,8 @@ or if you prefer `use-package`:
 
 ## Usage
 
-Whenever the command `major-mode-hydra` is executed, a (nice-looking)
-hydra for the major mode of the current buffer pops up.
+Whenever the command `major-mode-hydra` is executed, a (hopefully)
+pretty hydra for the major mode of the current buffer pops up.
 
 ![example1](screenshots/example1.png)
 
@@ -77,7 +77,7 @@ used.
 The generated hydra has the following default options:
 
 ```elisp
-(:exit t :hint nil :foreign-keys warn)
+(:color teal :hint nil)
 ```
 
 which means by default it quits the hydra after a head command is
@@ -88,6 +88,35 @@ want. You can override it for each head using head options:
 (major-mode-hydra-bind clojure-mode "Load"
   ("k" cider-load-buffer "buffer" :exit nil)
   ("l" cider-load-file "file" :color red))
+```
+
+### Customization
+
+#### Custom separator
+
+You can customize the separator by setting the custom varable
+`major-mode-hydra-separator`. It should be set to a string containing
+a single character which is used to draw the separator line. [Unicode
+box drawing
+characters](https://en.wikipedia.org/wiki/Box-drawing_character) are
+recommended.
+
+#### Add title to the hydra
+
+You can add a title to the major mode hydra by setting
+`major-mode-hydra-title-generator`, which is a function that takes the
+major mode symbol and returns a string. For example, the title in the
+above screenshot is generated with the following generator:
+
+``` elisp
+(setq major-mode-hydra-title-generator
+      '(lambda (mode)
+         (s-concat "\n"
+                   (s-repeat 10 " ")
+                   (all-the-icons-icon-for-mode mode :v-adjust 0.05)
+                   " "
+                   (symbol-name mode)
+                   " commands")))
 ```
 
 ### Pretty Hydra
@@ -122,6 +151,18 @@ is an example in my own configuration:
            ("-" zoom-out "out")
            ("0" jp-zoom-default "reset"))))
 ```
+
+Apart from hydra's options like `:hint` or `:color`, there are
+additional options that allow you to customize the generated body
+docstring:
+
+- `:title` adds a title to the docstring. It's ignored when
+  `:formatter` is also specified. You can customize
+  `pretty-hydra-title-face` to change the look of the title.
+- `:formatter` allows you to fully customize the docstring. It's a
+  function that takes the docstring `pretty-hydra-define` generates,
+  and returns a new docstring that's gonna be used. You can do things
+  like generating a border etc.
 
 Note that `hydra` itself seems to provide a similar feature using the
 `:column` option but it doesn't seem to be documented in README. The
