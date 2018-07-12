@@ -92,6 +92,13 @@
     (should (equal major-mode-hydra--heads-alist
                    '((emacs-lisp-mode ("Test Emacs" "q" nil "nil")))))))
 
+(ert-deftest major-mode-hydra-tests--bind-key--invisibe-quit ()
+  (let* ((major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version"))))
+         (major-mode-hydra-invisible-quit-key "q"))
+    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
+      ("q" foobar "foobar"))
+    (should (equal major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))))
+
 (provide 'major-mode-hydra-tests)
 
 ;;; major-mode-hydra-tests.el ends here

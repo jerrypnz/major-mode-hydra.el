@@ -100,6 +100,14 @@
   (lambda (docstring)
     (s-concat " " (propertize title 'face 'pretty-hydra-title-face) "\n" docstring)))
 
+(defconst pretty-hydra--opts '(:separator :formatter :title :quit-key))
+
+(defun pretty-hydra--remove-custom-opts (body)
+  (->> body
+       (-partition 2)
+       (-remove (-lambda ((opt _)) (member opt pretty-hydra--opts)))
+       (-mapcat #'identity)))
+
 ;;;###autoload
 (defmacro pretty-hydra-define (name body heads-plist)
   (declare (indent defun) (doc-string 3))
@@ -108,11 +116,16 @@
                         (-some-> (plist-get body :title)
                                  pretty-hydra--title-formatter)
                         #'identity))
+         (quit-key (plist-get body :quit-key))
          (docstring (->> heads-plist
                          (pretty-hydra--gen-body-docstring separator)
                          (funcall formatter)
                          (s-prepend "\n"))) ;; This is required, otherwise the docstring won't show up correctly
-         (heads (pretty-hydra--get-heads heads-plist)))
+         (heads (pretty-hydra--get-heads heads-plist))
+         (heads (if quit-key
+                    (append heads `((,quit-key nil)))
+                  heads))
+         (body (pretty-hydra--remove-custom-opts body)))
     `(defhydra ,name ,body
        ,docstring
        ,@heads)))

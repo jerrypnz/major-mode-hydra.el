@@ -101,6 +101,13 @@ box drawing
 characters](https://en.wikipedia.org/wiki/Box-drawing_character) are
 recommended.
 
+#### Add an invisible hydra head for quitting
+
+You can set `major-mode-hydra-invisible-quit-key` to a key sequence
+which can be used for quitting the hydra. This key doesn't show up in
+the docstring. The key being used is not allowed in
+`major-mode-hydra-bind`, otherwise there can be conflicts.
+
 #### Add title to the hydra
 
 You can add a title to the major mode hydra by setting
@@ -126,14 +133,13 @@ This package includes `pretty-hydra.el` which is used by
 is an example in my own configuration:
 
 ```elisp
-(pretty-hydra-define jp-window (:hint nil :foreign-keys warn)
+(pretty-hydra-define jp-window (:hint nil :foreign-keys warn :quit-key "q")
   (;; general window management commands
    "Windows" (("x" ace-delete-window "delete")
               ("m" ace-delete-other-windows "maximize")
               ("s" ace-swap-window "swap")
               ("a" ace-select-window "select")
-              ("o" other-window "cycle")
-              ("q" nil "quit"))
+              ("o" other-window "cycle"))
    ;; resize
    "Resize" (("h" move-border-left "←")
              ("j" move-border-down "↓")
@@ -163,6 +169,8 @@ docstring:
   function that takes the docstring `pretty-hydra-define` generates,
   and returns a new docstring that's gonna be used. You can do things
   like generating a border etc.
+- `:quit-key` adds a invisible hydra head for quitting the hydra. It
+  can be very useful when you set `:foreign-keys` to `warn`.
 
 Note that `hydra` itself seems to provide a similar feature using the
 `:column` option but it doesn't seem to be documented in README. The

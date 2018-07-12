@@ -37,16 +37,24 @@
 
 (defcustom major-mode-hydra-separator "═"
   "The separator char to be used to draw the separator
-  line. UTF-8 box drawing characters are recommended."
+line. UTF-8 box drawing characters are recommended."
   :type 'string
   :group 'major-mode-hydra)
 
 (defcustom major-mode-hydra-title-generator nil
   "Title generator, when set to a function, is used to generate a
-  title for major mode hydras. The function should take a single
-  parameter, which is the major mode name (a symbol), and return
-  a string."
+title for major mode hydras. The function should take a single
+parameter, which is the major mode name (a symbol), and return a
+string."
   :type 'function
+  :group 'major-mode-hydra)
+
+(defcustom major-mode-hydra-invisible-quit-key nil
+  "When set to a key sequence, an invisible hydra head for
+quitting is added to major mode hydras, which allows you to quit
+without calling any head. Note that when it's set to non-nil, the
+key shouldn't be used in other heads (it will warn about this)."
+  :type 'key-sequence
   :group 'major-mode-hydra)
 
 (defvar major-mode-hydra--heads-alist nil
@@ -63,7 +71,11 @@ for the mode gets recompiled.")
          (title (when (functionp major-mode-hydra-title-generator)
                   (funcall major-mode-hydra-title-generator mode)))
          ;; By default, exit hydra after invoking a head and warn if a foreign key is pressed.
-         (hydra-body `(:color teal :hint nil :title ,title :separator ,major-mode-hydra-separator))
+         (hydra-body `(:color teal
+                              :hint nil
+                              :title ,title
+                              :separator ,major-mode-hydra-separator
+                              :quit-key ,major-mode-hydra-invisible-quit-key))
          ;; Convert heads to a plist that `pretty-hydra-define' expects.
          (hydra-heads-plist (->> heads
                                  reverse
@@ -89,7 +101,12 @@ for the mode gets recompiled.")
                         (progn
                           (message "\"%s\" has already been bound to %s" key cmd)
                           heads)
-                      (cons `(,column ,key ,command ,hint ,@plist) heads))))
+                      (if (and major-mode-hydra-invisible-quit-key
+                               (equal key major-mode-hydra-invisible-quit-key))
+                          (progn
+                            (message "\"%s\" has already been bound to the invisible quit" major-mode-hydra-invisible-quit-key)
+                            heads)
+                        (cons `(,column ,key ,command ,hint ,@plist) heads)))))
                 heads
                 bindings))
 
@@ -111,7 +128,7 @@ for the mode gets recompiled.")
 
 (defun major-mode-hydra-clear-cache ()
   "Clear major mode hydra cache so that they are recreated the
-  next time `major-mode-hydra' gets executed"
+next time `major-mode-hydra' gets executed"
   (interactive)
   (setq major-mode-hydra--body-cache nil))
 
