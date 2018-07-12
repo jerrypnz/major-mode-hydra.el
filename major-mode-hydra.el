@@ -26,14 +26,28 @@
 
 ;;; Commentary:
 
-;; Inspired by Spacemacs major mode leader key and based on the awesome hydra,
-;; this package offers a better way to manage your major mode specific key
-;; bindings.
+;; Inspired by Spacemacs major mode leader key and based on the
+;; awesome hydra, this package offers a better way to manage your
+;; major mode specific key bindings.
 
 ;;; Code:
 
 (require 'dash)
 (require 'pretty-hydra)
+
+(defcustom major-mode-hydra-separator "═"
+  "The separator char to be used to draw the separator
+  line. UTF-8 box drawing characters are recommended."
+  :type 'string
+  :group 'major-mode-hydra)
+
+(defcustom major-mode-hydra-title-generator nil
+  "Title generator, when set to a function, is used to generate a
+  title for major mode hydras. The function should take a single
+  parameter, which is the major mode name (a symbol), and return
+  a string."
+  :type 'function
+  :group 'major-mode-hydra)
 
 (defvar major-mode-hydra--heads-alist nil
   "An alist holding hydra heads for each major mode, keyed by the mode name.")
@@ -45,14 +59,16 @@ Whenever `major-mode-hydra--heads-alist' is changed, the hydra
 for the mode gets recompiled.")
 
 (defun major-mode-hydra--recompile (mode heads)
-  (let ((hydra-name (make-symbol (format "major-mode-hydras/%s" mode)))
-        ;; By default, exit hydra after invoking a head and warn if a foreign key is pressed.
-        (hydra-body '(:exit t :hint nil :foreign-keys warn))
-        ;; Convert heads to a plist that `pretty-hydra-define' expects.
-        (hydra-heads-plist (->> heads
-                                reverse
-                                (-group-by #'car)
-                                (-mapcat (-lambda ((column . heads)) (list column (-map #'cdr heads)))))))
+  (let* ((hydra-name (make-symbol (format "major-mode-hydras/%s" mode)))
+         (title (when (functionp major-mode-hydra-title-generator)
+                  (funcall major-mode-hydra-title-generator mode)))
+         ;; By default, exit hydra after invoking a head and warn if a foreign key is pressed.
+         (hydra-body `(:color teal :hint nil :title ,title :separator ,major-mode-hydra-separator))
+         ;; Convert heads to a plist that `pretty-hydra-define' expects.
+         (hydra-heads-plist (->> heads
+                                 reverse
+                                 (-group-by #'car)
+                                 (-mapcat (-lambda ((column . heads)) (list column (-map #'cdr heads)))))))
     (eval `(pretty-hydra-define ,hydra-name ,hydra-body ,hydra-heads-plist))))
 
 (defun major-mode-hydra--get-or-recompile (mode)
@@ -92,6 +108,12 @@ for the mode gets recompiled.")
         (assq-delete-all mode major-mode-hydra--body-cache))
   (setq major-mode-hydra--heads-alist
         (assq-delete-all mode major-mode-hydra--heads-alist)))
+
+(defun major-mode-hydra-clear-cache ()
+  "Clear major mode hydra cache so that they are recreated the
+  next time `major-mode-hydra' gets executed"
+  (interactive)
+  (setq major-mode-hydra--body-cache nil))
 
 ;; Use a macro so that it's not necessary to quote things
 
