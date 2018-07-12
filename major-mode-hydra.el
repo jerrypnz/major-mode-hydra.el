@@ -122,15 +122,17 @@ for the mode gets recompiled.")
   (declare (indent defun) (doc-string 3))
   `(major-mode-hydra--bind-key ',mode ,column ',body))
 
+(defun major-mode-hydra-dispatch (mode)
+  (let ((hydra (major-mode-hydra--get-or-recompile mode)))
+    (if hydra
+        (call-interactively hydra)
+      (message "Major mode hydra not found for %s" mode))))
+
 ;;;###autoload
 (defun major-mode-hydra ()
   "Show the hydra for the current major mode."
   (interactive)
-  (let* ((mode major-mode)
-         (hydra (major-mode-hydra--get-or-recompile mode)))
-    (if hydra
-        (call-interactively hydra)
-      (message "Major mode hydra not found for %s" mode))))
+  (major-mode-hydra-dispatch major-mode))
 
 (provide 'major-mode-hydra)
 
