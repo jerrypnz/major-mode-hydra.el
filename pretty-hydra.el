@@ -97,8 +97,8 @@
   :group 'pretty-hydra)
 
 (defun pretty-hydra--title-formatter (title)
-  (lambda (docstring)
-    (s-concat " " (propertize title 'face 'pretty-hydra-title-face) "\n" docstring)))
+  `(lambda (docstring)
+     (s-concat " " (propertize ,title 'face 'pretty-hydra-title-face) "\n" docstring)))
 
 (defconst pretty-hydra--opts '(:separator :formatter :title :quit-key))
 
