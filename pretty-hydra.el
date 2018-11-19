@@ -36,6 +36,7 @@
 (require 'hydra)
 
 (defun pretty-hydra--calc-column-width (column-name heads)
+  "Calculate the width for a column based on COLUMN-NAME and HEADS."
   (->> heads
        (-map (-lambda ((key _ hint))
                (cond
@@ -46,6 +47,12 @@
        -max))
 
 (defun pretty-hydra--gen-heads-docstring (column-name separator heads max-heads)
+  "Generate pretty docstring for one column.
+COLUMN-NAME appears in the first row, followed by the SEPARATOR
+in the second row.  After that are all the hydra HEADS, each of
+which consists of the key and hint.  If the number of HEADS is
+smaller than MAX-HEADS, extra lines are created at the end which
+is necessary to create the final table."
   (-let ((column-len (pretty-hydra--calc-column-width column-name heads)))
     (-as-> heads docs
            (-mapcat (-lambda ((key _ hint))
@@ -65,6 +72,8 @@
            (-map (lambda (doc) (s-pad-right column-len " " doc)) docs))))
 
 (defun pretty-hydra--gen-body-docstring (separator hydra-plist)
+  "Generate hydra body docstring based on the HYDRA-PLIST.
+SEPARATOR char is used to generate the separator line."
   (-let* ((head-columns (-partition 2 hydra-plist))
           (max-heads (->> head-columns
                           (-map (-lambda ((_ heads)) (length heads)))
@@ -83,6 +92,8 @@
          (format "\n%s\n"))))
 
 (defun pretty-hydra--get-heads (hydra-plist)
+  "Extract key, command and options from the HYDRA-PLIST.
+This is used to create the HEADS to be passed to `defhydra'."
   (->> hydra-plist
        (-partition 2)
        (-mapcat #'cadr)
@@ -97,12 +108,14 @@
   :group 'pretty-hydra)
 
 (defun pretty-hydra--title-formatter (title)
+  "Create a docstring formatter which add the `TITLE' to the docstring."
   `(lambda (docstring)
      (s-concat " " (propertize ,title 'face 'pretty-hydra-title-face) "\n" docstring)))
 
 (defconst pretty-hydra--opts '(:separator :formatter :title :quit-key))
 
 (defun pretty-hydra--remove-custom-opts (body)
+  "Remove custom options used by pretty hydra from the hydra BODY."
   (->> body
        (-partition 2)
        (-remove (-lambda ((opt _)) (member opt pretty-hydra--opts)))
@@ -110,7 +123,36 @@
 
 ;;;###autoload
 (defmacro pretty-hydra-define (name body heads-plist)
-  (declare (indent defun) (doc-string 3))
+  "Define a pretty hydra with given NAME, BODY options and HEADS-PLIST.
+The generated hydra has a nice-looking docstring which is a table
+with columns of command keys and hints.
+
+NAME should be a symbol and is passed to `defhydra' as is.
+
+BODY is the same as that in `defhydra', withe the following
+pretty hydra specific ones:
+
+  - `:separator' a single char used to generate the separator
+    line.
+
+  - `:title' a string that's added to the beginning of the
+    docstring as a title of the hydra.  Ignored when `:formatter'
+    is also specified.
+
+  - `:formatter' a function that takes the generated docstring
+    and return a decorated one.  It can be used to further
+    customize the hydra docstring.
+
+  - `:quit-key' a key for quitting the hydra.  When specified, an
+    invisible head is created with this key for quitting the
+    hydra.
+
+HEADS-PLIST is a plist of columns of hydra heads.  The keys of
+the plist should be column names.  The values should be lists of
+hydra heads.  Each head has exactly the same syntax as that of
+`defhydra', except hint is required for the head to appear in the
+docstring."
+  (declare (indent defun))
   (let* ((separator (or (plist-get body :separator) "─"))
          (formatter (or (plist-get body :formatter)
                         (-some-> (plist-get body :title)

@@ -36,24 +36,21 @@
 (require 'pretty-hydra)
 
 (defcustom major-mode-hydra-separator "═"
-  "The separator char to be used to draw the separator
-line. UTF-8 box drawing characters are recommended."
+  "The separator char to be used to draw the separator line.
+UTF-8 box drawing characters are recommended."
   :type 'string
   :group 'major-mode-hydra)
 
 (defcustom major-mode-hydra-title-generator nil
-  "Title generator, when set to a function, is used to generate a
-title for major mode hydras. The function should take a single
-parameter, which is the major mode name (a symbol), and return a
-string."
+  "Title generator, a function used to generate a title for major mode hydras.
+The function should take a single parameter, which is the major
+mode name (a symbol), and return a string."
   :type 'function
   :group 'major-mode-hydra)
 
 (defcustom major-mode-hydra-invisible-quit-key nil
-  "When set to a key sequence, an invisible hydra head for
-quitting is added to major mode hydras, which allows you to quit
-without calling any head. Note that when it's set to non-nil, the
-key shouldn't be used in other heads (it will warn about this)."
+  "Key for the invisible hydra head that quits the hydra.
+Set to nil to stop generating such heads."
   :type 'key-sequence
   :group 'major-mode-hydra)
 
@@ -67,6 +64,7 @@ Whenever `major-mode-hydra--heads-alist' is changed, the hydra
 for the mode gets recompiled.")
 
 (defun major-mode-hydra--recompile (mode heads)
+  "Recompile the hydra for given MODE with given HEADS definition."
   (let* ((hydra-name (make-symbol (format "major-mode-hydras/%s" mode)))
          (title (when (functionp major-mode-hydra-title-generator)
                   (funcall major-mode-hydra-title-generator mode)))
@@ -84,6 +82,7 @@ for the mode gets recompiled.")
     (eval `(pretty-hydra-define ,hydra-name ,hydra-body ,hydra-heads-plist))))
 
 (defun major-mode-hydra--get-or-recompile (mode)
+  "Get cached hydra for given MODE, or recompile it if there isn't a cached one."
   (-if-let (hydra (alist-get mode major-mode-hydra--body-cache))
       hydra
     (-when-let (heads (alist-get mode major-mode-hydra--heads-alist))
@@ -92,6 +91,9 @@ for the mode gets recompiled.")
         hydra))))
 
 (defun major-mode-hydra--update-heads (heads column bindings)
+  "Update hydra HEADS in the given COLUMN with BINDINGS.
+BINDINGS is a list of hydra heads that are added to the COLUMN.
+Return updated HEADS."
   (-reduce-from (-lambda (heads (key command . hint-and-plist))
                   (-let [(hint . plist) (if (and (car hint-and-plist)
                                                  (not (keywordp (car hint-and-plist))))
@@ -111,6 +113,7 @@ for the mode gets recompiled.")
                 bindings))
 
 (defun major-mode-hydra--bind-key (mode column bindings)
+  "Add BINDINGS (heads) for a MODE under the COLUMN."
   (-as-> (alist-get mode major-mode-hydra--heads-alist) heads
          (major-mode-hydra--update-heads heads column bindings)
          (setf (alist-get mode major-mode-hydra--heads-alist)
@@ -120,26 +123,38 @@ for the mode gets recompiled.")
         (assq-delete-all mode major-mode-hydra--body-cache)))
 
 (defun major-mode-hydra--unbind-all (mode)
-  "Remove all the hydra heads for MODE. Introduced for testing."
+  "Remove all the hydra heads for MODE.  Introduced for testing."
   (setq major-mode-hydra--body-cache
         (assq-delete-all mode major-mode-hydra--body-cache))
   (setq major-mode-hydra--heads-alist
         (assq-delete-all mode major-mode-hydra--heads-alist)))
 
 (defun major-mode-hydra-clear-cache ()
-  "Clear major mode hydra cache so that they are recreated the
-next time `major-mode-hydra' gets executed"
+  "Clear major mode hydra cache.
+Cached hydras are then recreated the next time `major-mode-hydra'
+gets executed.  Useful when debugging an issue or force update a
+major mode hydra."
   (interactive)
   (setq major-mode-hydra--body-cache nil))
 
 ;; Use a macro so that it's not necessary to quote things
 
 ;;;###autoload
-(defmacro major-mode-hydra-bind (mode column &rest body)
-  (declare (indent defun) (doc-string 3))
-  `(major-mode-hydra--bind-key ',mode ,column ',body))
+(defmacro major-mode-hydra-bind (mode column &rest bindings)
+  "Add BINDINGS (heads) for a MODE under the COLUMN.
+
+MODE is the major mode name (symbol).  There is no need to quote it.
+
+COLUMN is a string to put the hydra heads under.
+
+BINDINGS is a list of hydra heads to be added.  Each head has
+exactly the same structure as that in `pretty-hydra-define' or
+`defhydra', except `:exit' is set to t by default."
+  (declare (indent 2))
+  `(major-mode-hydra--bind-key ',mode ,column ',bindings))
 
 (defun major-mode-hydra-dispatch (mode)
+  "Summon the hydra for given MODE (if there is one)."
   (let ((hydra (major-mode-hydra--get-or-recompile mode)))
     (if hydra
         (call-interactively hydra)
