@@ -1,4 +1,7 @@
-## Description
+
+## Major Mode Hydra
+
+[![MELPA](https://melpa.org/packages/major-mode-hydra-badge.svg)](https://melpa.org/#/major-mode-hydra)
 
 Inspired by [Spacemacs major mode leader
 key](http://spacemacs.org/doc/DOCUMENTATION.html#major-mode-leader-key)
@@ -8,9 +11,11 @@ key bindings.
 
 ## Install
 
-### MELPA
+### package.el
 
-Coming soon
+This package is available on [MELPA](https://melpa.org).
+
+<kbd>M-x</kbd> `package-install` <kbd>[RET]</kbd> `major-mode-hydra` <kbd>[RET]</kbd>
 
 ### Manual
 
@@ -26,7 +31,9 @@ directory to the load path:
 (add-to-list 'load-path "/place/where/you/put/it/")
 ```
 
-then `require` the package and bind the `major-mode-hydra` command to a key:
+## Usage
+
+`require` the package and bind the `major-mode-hydra` command to a key:
 
 ```elisp
 (require 'major-mode-hydra)
@@ -40,8 +47,6 @@ or if you prefer `use-package`:
   :bind
   ("C-M-m" . major-mode-hydra))
 ```
-
-## Usage
 
 Whenever the command `major-mode-hydra` is executed, a (hopefully)
 pretty hydra for the major mode of the current buffer pops up.
@@ -126,11 +131,14 @@ above screenshot is generated with the following generator:
                    " commands")))
 ```
 
-### Pretty Hydra
+## Pretty Hydra
+
+[![MELPA](https://melpa.org/packages/pretty-hydra-badge.svg)](https://melpa.org/#/pretty-hydra)
 
 This package includes `pretty-hydra.el` which is used by
-`major-mode-hydra.el` but can also be used on its own. The following
-is an example in my own configuration:
+`major-mode-hydra.el` but can also be installed and used on its own.
+
+The following is an example in my own configuration:
 
 ```elisp
 (pretty-hydra-define jp-window (:hint nil :foreign-keys warn :quit-key "q")
