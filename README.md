@@ -2,6 +2,7 @@
 ## Major Mode Hydra
 
 [![MELPA](https://melpa.org/packages/major-mode-hydra-badge.svg)](https://melpa.org/#/major-mode-hydra)
+[![MELPA Stable](https://stable.melpa.org/packages/major-mode-hydra-badge.svg)](https://stable.melpa.org/#/major-mode-hydra)
 
 Inspired by [Spacemacs major mode leader
 key](http://spacemacs.org/doc/DOCUMENTATION.html#major-mode-leader-key)
@@ -134,6 +135,7 @@ above screenshot is generated with the following generator:
 ## Pretty Hydra
 
 [![MELPA](https://melpa.org/packages/pretty-hydra-badge.svg)](https://melpa.org/#/pretty-hydra)
+[![MELPA Stable](https://stable.melpa.org/packages/pretty-hydra-badge.svg)](https://stable.melpa.org/#/pretty-hydra)
 
 This package includes `pretty-hydra.el` which is used by
 `major-mode-hydra.el` but can also be installed and used on its own.
