@@ -6,4 +6,6 @@
 
 (development
  (depends-on "hydra")
+ (depends-on "dash")
+ (depends-on "dash-functional")
  (depends-on "ert-runner"))
