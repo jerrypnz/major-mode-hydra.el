@@ -69,15 +69,15 @@
   "Pad or truncate HINT to LEN, preserving text properties."
   (if (null hint)
       hint
-    (let* ((len1 (length hint))
-           (props (text-properties-at 0 hint))
-           (hint1 (cond
-                   ((> len1 len) (s-truncate len hint))
-                   ((< len1 len) (s-pad-right len " " hint))
-                   (t hint))))
-      (when props
-        (set-text-properties 0 len props hint1))
-      hint1)))
+    (let ((len1 (length hint))
+          (props (text-properties-at 0 hint)))
+      (cond
+       ((> len1 len) (let ((x (s-truncate len hint)))
+                       (when props
+                         (set-text-properties 0 len props x))
+                       x))
+       ((< len1 len) (s-pad-right len " " hint))
+       (t            hint)))))
 
 (defun pretty-hydra--cell-docstring (width head)
   "Generate docstring for a HEAD with given WIDTH."
