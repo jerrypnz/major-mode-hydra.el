@@ -207,6 +207,19 @@ docstring."
        ,docstring
        ,@heads)))
 
+;;;###autoload
+(defun pretty-hydra-radio (name status)
+  "Create a dynamic hint that look like a radio button with given NAME.
+Radio is considered on when STATUS is non-nil, otherwise off."
+  (s-concat name " " (if status
+                         (propertize "(*)" 'face 'font-lock-keyword-face)
+                       (propertize "( )" 'face 'font-lock-comment-face))))
+
+;;;###autoload
+(defmacro pretty-hydra-mode-radio (name mode)
+  "Create a radio hint for given MODE with given NAME."
+  `(pretty-hydra-radio ,name (bound-and-true-p ,mode)))
+
 (provide 'pretty-hydra)
 
 ;;; pretty-hydra.el ends here
