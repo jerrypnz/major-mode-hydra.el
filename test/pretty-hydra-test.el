@@ -29,7 +29,9 @@
 
 (ert-deftest pretty-hydra-test--calc-column-width ()
   (dolist (test '((9 "C1" (("a" nil "c1")))
+                  (13 "C1" (("a" nil "c1" :toggle t)))
                   (27 "C1" (("a" nil (foobar) :width 20)))
+                  (27 "C1" (("a" nil (foobar) :width 20 :toggle t)))
                   (27 "C1" (("a" nil foobar :width 20)))
                   (13 "Long Column" (("a" nil "c1")))
                   (4  "C1" (("a" nil)))
@@ -47,6 +49,7 @@
 
 (ert-deftest pretty-hydra-test--cell-docstring ()
   (dolist (test '(((" _a_: c1            ") . ("a" nil "c1"))
+                  ((" _a_: %s(pretty-hydra-toggle \"c1\" (bound-and-true-p c1))        ") . ("a" c1 "c1" :toggle t))
                   ((" _a_: %s(pretty-hydra--pad-or-trunc-hint c1 14)") . ("a" nil c1))
                   ((" _a_: %s(pretty-hydra--pad-or-trunc-hint (c1) 14)") . ("a" nil (c1)))
                   ((" _a_: %s(pretty-hydra--pad-or-trunc-hint (c1 (quote foo)) 14)") . ("a" nil (c1 'foo)))
