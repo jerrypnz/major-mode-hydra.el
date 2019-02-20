@@ -45,17 +45,17 @@
 
 (defun pretty-hydra--cell-width (key hint-width)
   "Calculate the width of a head cell based on the KEY and HINT-WIDTH."
-  (+ 7 (length key) hint-width))
+  (+ 6 (length key) hint-width))
 
 (defconst pretty-hydra--default-hint-width 20)
 
 (defun pretty-hydra--calc-column-width (column-name heads)
   "Calculate the width for a column based on COLUMN-NAME and HEADS."
   (->> heads
-       (-map (-lambda ((key _ hint &plist :width width))
+       (-map (-lambda ((key _ hint &plist :width width :toggle toggle-p))
                (cond
                 ((char-or-string-p hint)
-                 (pretty-hydra--cell-width key (length hint))) ; string hint
+                 (pretty-hydra--cell-width key (+ (length hint) (if toggle-p 4 0)))) ; string hint
                 ((numberp width)
                  (pretty-hydra--cell-width key width)) ; configured width
                 ((or (null hint))
@@ -81,17 +81,23 @@
 
 (defun pretty-hydra--cell-docstring (width head)
   "Generate docstring for a HEAD with given WIDTH."
-  (-let [(key _ hint) head]
+  (-let [(key cmd hint &plist :toggle toggle-p) head]
     (cond
      ((char-or-string-p hint)
-      (list (s-pad-right width " " (format " [_%s_] %s" key hint)))) ;; string hint
+      (if toggle-p
+          (let* ((expr (prin1-to-string `(pretty-hydra-toggle ,hint (bound-and-true-p ,cmd))))
+                 (width (+ width (- (+ (length expr) 2) (+ (length hint) 4)))))
+            (list (s-pad-right width " " (format " _%s_: %%s%s" key expr))))
+        (list (s-pad-right width " " (format " _%s_: %s" key hint))))) ;; string hint
+
      ((or (null hint))
       nil)  ;; no hint, doesn't show it in docstring at all
+
      (t
-      (list (format " [_%s_] %%s%s"
+      (list (format " _%s_: %%s%s"
                     key
                     (prin1-to-string
-                     `(pretty-hydra--pad-or-trunc-hint ,hint ,(- width (length key) 6)))))))))
+                     `(pretty-hydra--pad-or-trunc-hint ,hint ,(- width (length key) 5)))))))))
 
 (defun pretty-hydra--gen-heads-docstring (column-name separator heads max-heads)
   "Generate pretty docstring for one column.
@@ -137,17 +143,19 @@ This is used to create the HEADS to be passed to `defhydra'."
        (-map (-lambda ((key cmd _ . opts))
                (-concat (list key cmd) (pretty-hydra--remove-custom-opts opts))))))
 
-(defface pretty-hydra-title-face
-  '((t (:inherit 'default)))
-  "Face used to render titles for pretty hydra"
-  :group 'pretty-hydra)
+(defun pretty-hydra--maybe-add-title (title docstring)
+  "Add TITLE to the DOCSTRING if it's not nil, other return DOCSTRING unchanged."
+  (if (null title)
+      docstring
+    (format "\n %s\n%s"
+            (cond
+             ((char-or-string-p title) title)
+             ((symbolp title)          (format "%%s`%s" title))
+             ((listp title)            (format "%%s%s" (prin1-to-string title)))
+             (t                        ""))
+            docstring)))
 
-(defun pretty-hydra--title-formatter (title)
-  "Create a docstring formatter which add the `TITLE' to the docstring."
-  `(lambda (docstring)
-     (s-concat " " (propertize ,title 'face 'pretty-hydra-title-face) "\n" docstring)))
-
-(defconst pretty-hydra--opts '(:separator :formatter :title :quit-key :width))
+(defconst pretty-hydra--opts '(:separator :formatter :title :quit-key :width :toggle))
 
 (defun pretty-hydra--remove-custom-opts (body)
   "Remove custom options used by pretty hydra from the hydra BODY."
@@ -171,8 +179,7 @@ pretty hydra specific ones:
     line.
 
   - `:title' a string that's added to the beginning of the
-    docstring as a title of the hydra.  Ignored when `:formatter'
-    is also specified.
+    docstring as a title of the hydra.
 
   - `:formatter' a function that takes the generated docstring
     and return a decorated one.  It can be used to further
@@ -189,13 +196,13 @@ hydra heads.  Each head has exactly the same syntax as that of
 docstring."
   (declare (indent defun))
   (let* ((separator (or (plist-get body :separator) "─"))
+         (title     (plist-get body :title))
          (formatter (or (plist-get body :formatter)
-                        (-some-> (plist-get body :title)
-                                 pretty-hydra--title-formatter)
                         #'identity))
-         (quit-key (plist-get body :quit-key))
+         (quit-key  (plist-get body :quit-key))
          (docstring (->> heads-plist
                          (pretty-hydra--gen-body-docstring separator)
+                         (pretty-hydra--maybe-add-title title)
                          (funcall formatter)
                          (s-prepend "\n"))) ;; This is required, otherwise the docstring won't show up correctly
          (heads (pretty-hydra--get-heads heads-plist))
@@ -207,18 +214,23 @@ docstring."
        ,docstring
        ,@heads)))
 
+(defface pretty-hydra-toggle-on-face
+  '((t (:inherit 'font-lock-keyword-face)))
+  "Face used to render titles for pretty hydra"
+  :group 'pretty-hydra)
+
+(defface pretty-hydra-toggle-off-face
+  '((t (:inherit 'font-lock-comment-face)))
+  "Face used to render titles for pretty hydra"
+  :group 'pretty-hydra)
+
 ;;;###autoload
-(defun pretty-hydra-radio (name status)
+(defun pretty-hydra-toggle (name status)
   "Create a dynamic hint that look like a radio button with given NAME.
 Radio is considered on when STATUS is non-nil, otherwise off."
   (s-concat name " " (if status
-                         (propertize "(*)" 'face 'font-lock-keyword-face)
-                       (propertize "( )" 'face 'font-lock-comment-face))))
-
-;;;###autoload
-(defmacro pretty-hydra-mode-radio (name mode)
-  "Create a radio hint for given MODE with given NAME."
-  `(pretty-hydra-radio ,name (bound-and-true-p ,mode)))
+                         (propertize "(*)" 'face 'pretty-hydra-toggle-on-face)
+                       (propertize "( )" 'face 'pretty-hydra-toggle-off-face))))
 
 (provide 'pretty-hydra)
 

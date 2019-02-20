@@ -172,9 +172,8 @@ Apart from hydra's options like `:hint` or `:color`, there are
 additional options that allow you to customize the generated body
 docstring:
 
-- `:title` adds a title to the docstring. It's ignored when
-  `:formatter` is also specified. You can customize
-  `pretty-hydra-title-face` to change the look of the title.
+- `:title` adds a title to the docstring. If it is a elisp variable or
+  sexp, it's evaluated every time the hydra is opened or refreshed.
 - `:formatter` allows you to fully customize the docstring. It's a
   function that takes the docstring `pretty-hydra-define` generates,
   and returns a new docstring that's gonna be used. You can do things

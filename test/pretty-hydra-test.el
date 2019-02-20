@@ -28,12 +28,14 @@
 (require 'pretty-hydra)
 
 (ert-deftest pretty-hydra-test--calc-column-width ()
-  (dolist (test '((10 "C1" (("a" nil "c1")))
-                  (28 "C1" (("a" nil (foobar) :width 20)))
-                  (28 "C1" (("a" nil foobar :width 20)))
+  (dolist (test '((9 "C1" (("a" nil "c1")))
+                  (13 "C1" (("a" nil "c1" :toggle t)))
+                  (27 "C1" (("a" nil (foobar) :width 20)))
+                  (27 "C1" (("a" nil (foobar) :width 20 :toggle t)))
+                  (27 "C1" (("a" nil foobar :width 20)))
                   (13 "Long Column" (("a" nil "c1")))
-                  (4 "C1" (("a" nil)))
-                  (28 "C1" (("a" nil (foo))))))
+                  (4  "C1" (("a" nil)))
+                  (27 "C1" (("a" nil (foo))))))
     (-let [(expected col-name heads) test]
       (should (equal expected (pretty-hydra--calc-column-width col-name heads))))))
 
@@ -46,10 +48,11 @@
       (should (equal expected (pretty-hydra--normalize-head head))))))
 
 (ert-deftest pretty-hydra-test--cell-docstring ()
-  (dolist (test '(((" [_a_] c1           ") . ("a" nil "c1"))
-                  ((" [_a_] %s(pretty-hydra--pad-or-trunc-hint c1 13)") . ("a" nil c1))
-                  ((" [_a_] %s(pretty-hydra--pad-or-trunc-hint (c1) 13)") . ("a" nil (c1)))
-                  ((" [_a_] %s(pretty-hydra--pad-or-trunc-hint (c1 (quote foo)) 13)") . ("a" nil (c1 'foo)))
+  (dolist (test '(((" _a_: c1            ") . ("a" nil "c1"))
+                  ((" _a_: %s(pretty-hydra-toggle \"c1\" (bound-and-true-p c1))        ") . ("a" c1 "c1" :toggle t))
+                  ((" _a_: %s(pretty-hydra--pad-or-trunc-hint c1 14)") . ("a" nil c1))
+                  ((" _a_: %s(pretty-hydra--pad-or-trunc-hint (c1) 14)") . ("a" nil (c1)))
+                  ((" _a_: %s(pretty-hydra--pad-or-trunc-hint (c1 (quote foo)) 14)") . ("a" nil (c1 'foo)))
                   (nil   . ("a" nil))))
     (-let [(expected . head) test]
       (should (equal expected (pretty-hydra--cell-docstring 20 head))))))
@@ -66,6 +69,14 @@
                     "C2"
                     (("c" foobar (foo) :width 20 :exit nil)
                      ("d" barfoo)))))))
+
+(ert-deftest pretty-hydra-test--maybe-add-title ()
+  (dolist (test '(("\n foo\ndocstring" . "foo")
+                  ("\n %s`foo\ndocstring" . foo)
+                  ("\n %s(foo \"bar\")\ndocstring" . (foo "bar"))
+                  ("docstring" . nil)))
+    (-let [(expected . title) test]
+      (should (equal expected (pretty-hydra--maybe-add-title title "docstring"))))))
 
 (provide 'pretty-hydra-test)
 
