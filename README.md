@@ -96,6 +96,7 @@ want. You can override it for each head using head options:
   ("l" cider-load-file "file" :color red))
 ```
 
+
 ### Customization
 
 #### Custom separator
@@ -181,9 +182,47 @@ docstring:
 - `:quit-key` adds a invisible hydra head for quitting the hydra. It
   can be very useful when you set `:foreign-keys` to `warn`.
 
-Note that `hydra` itself seems to provide a similar feature using the
-`:column` option but it doesn't seem to be documented in README. The
-generated docstring also looks a bit different.
+Hint for each head can be dynamic, either a symbol or an sexp which
+gets evaluated dynamically when rendering the hydra. Dynamic hint is
+always padded with space, or trimmed so that its length is fixed. This
+is to ensure the pretty layout doesn't get broken. You can specify the
+expected `:width` in head plists.
+
+Dynamic hints are useful in toggles where it shows different hint
+based on the state of the toggle. pretty-hydra has built-in support
+for such use cases. You can enable it by setting `:toggle` to `t` in head
+plist. In this case, the command should also be a variable that
+indicates whether the toggle is on or off. This is the case for pretty
+much all minor modes.
+
+The following is an example toggles hydra:
+
+``` elisp
+(pretty-hydra-define jp-toggles
+  (:hint nil :color amaranth :quit-key "q" :title jp-toggles--title)
+  ("Basic"
+   (("n" linum-mode "line number" :toggle t)
+    ("w" whitespace-mode "whitespace" :toggle t)
+    ("W" whitespace-cleanup-mode "whitespace cleanup" :toggle t)
+    ("r" rainbow-mode "rainbow" :toggle t)
+    ("L" page-break-lines-mode "page break lines" :toggle t))
+   "Highlight"
+   (("s" symbol-overlay-mode "symbol" :toggle t)
+    ("l" hl-line-mode "line" :toggle t)
+    ("x" highlight-sexp-mode "sexp" :toggle t)
+    ("t" hl-todo-mode "todo" :toggle t))
+   "UI"
+   (("d" jp-themes-toggle-light-dark (pretty-hydra-toggle "dark theme" jp-current-theme-dark-p)))
+   "Coding"
+   (("p" smartparens-mode "smartparens" :toggle t)
+    ("P" smartparens-strict-mode "smartparens strict" :toggle t)
+    ("f" flycheck-mode "flycheck" :toggle t))))
+```
+
+![example2](screenshots/example2.png)
+
+The on/off faces can be customized through
+`pretty-hydra-toggle-on-face` and `pretty-hydra-toggle-off-face`.
 
 ## License
 
