@@ -52,14 +52,16 @@
 (defun pretty-hydra--calc-column-width (column-name heads)
   "Calculate the width for a column based on COLUMN-NAME and HEADS."
   (->> heads
-       (-map (-lambda ((key _ hint &plist :width width :toggle toggle-p))
+       (-map (-lambda ((key cmd hint &plist :width width :toggle toggle-p))
                (cond
                 ((char-or-string-p hint)
                  (pretty-hydra--cell-width key (+ (length hint) (if toggle-p 4 0)))) ; string hint
                 ((numberp width)
                  (pretty-hydra--cell-width key width)) ; configured width
                 ((or (null hint))
-                 0)
+                 ;; no hint, use command name
+                 (pretty-hydra--cell-width key (+ (length (or (ignore-errors (symbol-name cmd)) cmd))
+                                                  (if toggle-p 4 0))))
                 (t
                  (pretty-hydra--cell-width key pretty-hydra--default-hint-width))))) ; dynamic hint
        (cons (+ 2 (length column-name)))
@@ -91,7 +93,10 @@
         (list (s-pad-right width " " (format " _%s_: %s" key hint))))) ;; string hint
 
      ((or (null hint))
-      nil)  ;; no hint, doesn't show it in docstring at all
+      ;; no hint, use command name
+      (list (s-pad-right width " " (format " _%s_: %s" key
+                                           (or (ignore-errors (symbol-name cmd))
+                                               cmd)))))
 
      (t
       (list (format " _%s_: %%s%s"
