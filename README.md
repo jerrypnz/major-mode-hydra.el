@@ -224,6 +224,21 @@ The following is an example toggles hydra:
 The on/off faces can be customized through
 `pretty-hydra-toggle-on-face` and `pretty-hydra-toggle-off-face`.
 
+You can use `pretty-hydra-define+` in order to add heads to an already existing
+`pretty-hydra`. New heads are appended to existing columns, if their names match
+(otherwise new columns are created). Here's an example redefining the
+`jp-window` hydra we created above.
+
+```elisp
+(pretty-hydra-define+ jp-window ()
+  (;; these heads are added to the existing "Windows" column
+   "Windows" (("r" transpose-frame "rotate")
+              ("z" zone "zone out!"))
+   ;; this is a new column, which gets added
+   "Appearance" (("f" set-frame-font "font")
+                 ("t" load-theme "theme"))))
+```
+
 ## License
 
 Copyright © 2018 Jerry Peng

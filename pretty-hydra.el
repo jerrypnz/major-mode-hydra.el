@@ -164,6 +164,17 @@ This is used to create the HEADS to be passed to `defhydra'."
        (-remove (-lambda ((opt _)) (member opt pretty-hydra--opts)))
        (-mapcat #'identity)))
 
+(defun pretty-hydra--merge-plists (old new)
+  "Merge items from NEW plist into the OLD plist.
+The result is a new plist."
+  (dolist (new-column
+           (cl-loop for (key _value) on new by 'cddr
+                    collect key)
+           old)
+    (lax-plist-put old new-column
+                   (append (lax-plist-get old new-column)
+                           (lax-plist-get new new-column)))))
+
 ;;;###autoload
 (defmacro pretty-hydra-define (name body heads-plist)
   "Define a pretty hydra with given NAME, BODY options and HEADS-PLIST.
@@ -210,9 +221,55 @@ docstring."
                     (append heads `((,quit-key nil)))
                   heads))
          (body (pretty-hydra--remove-custom-opts body)))
-    `(defhydra ,name ,body
-       ,docstring
-       ,@heads)))
+    `(progn
+       (set (defvar ,(intern (format "%S/heads-plist" name))
+              nil
+              ,(format "heads-plist of %S." name))
+            (quote ,heads-plist))
+       (set (defvar ,(intern (format "%S/pretty-body" name))
+              nil
+              ,(format "pretty-body of %S." name))
+            (quote ,body))
+       (defhydra ,name ,body
+         ,docstring
+         ,@heads))))
+
+(defmacro pretty-hydra-define+ (name body heads-plist)
+  "Redefine an existing pretty-hydra by adding new heads.
+If heads are added to a column already in NAME, the heads are
+appended to that column.
+Arguments are same as of `pretty-hydra-define'."
+  (declare (indent defun))
+  (let* ((body (or body (hydra--prop name "/pretty-body")))
+         (heads-plist (pretty-hydra--merge-plists
+                       (hydra--prop name "/heads-plist") heads-plist))
+         (separator (or (plist-get body :separator) "─"))
+         (title     (plist-get body :title))
+         (formatter (or (plist-get body :formatter)
+                        #'identity))
+         (quit-key  (plist-get body :quit-key))
+         (docstring (->> heads-plist
+                         (pretty-hydra--gen-body-docstring separator)
+                         (pretty-hydra--maybe-add-title title)
+                         (funcall formatter)
+                         (s-prepend "\n")))
+         (heads (pretty-hydra--get-heads heads-plist))
+         (heads (if quit-key
+                    (append heads `((,quit-key nil)))
+                  heads))
+         (body (pretty-hydra--remove-custom-opts body)))
+    `(progn
+       (set (defvar ,(intern (format "%S/heads-plist" name))
+              nil
+              ,(format "heads-plist of %S." name))
+            (quote ,heads-plist))
+       (set (defvar ,(intern (format "%S/pretty-body" name))
+              nil
+              ,(format "pretty-body of %S." name))
+            (quote ,body))
+       (defhydra+ ,name ,body
+         ,docstring
+         ,@heads))))
 
 (defface pretty-hydra-toggle-on-face
   '((t (:inherit 'font-lock-keyword-face)))
