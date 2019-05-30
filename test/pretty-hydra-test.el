@@ -50,6 +50,8 @@
 (ert-deftest pretty-hydra-test--cell-docstring ()
   (dolist (test '(((" _a_: c1            ") . ("a" nil "c1"))
                   ((" _a_: %s(pretty-hydra-toggle \"c1\" (bound-and-true-p c1))        ") . ("a" c1 "c1" :toggle t))
+                  ((" _a_: %s(pretty-hydra-toggle \"c1\" (bound-and-true-p status-var))        ") . ("a" c1 "c1" :toggle status-var))
+                  ((" _a_: %s(pretty-hydra-toggle \"c1\" (status-expr))        ") . ("a" c1 "c1" :toggle (status-expr)))
                   ((" _a_: %s(pretty-hydra--pad-or-trunc-hint c1 14)") . ("a" nil c1))
                   ((" _a_: %s(pretty-hydra--pad-or-trunc-hint (c1) 14)") . ("a" nil (c1)))
                   ((" _a_: %s(pretty-hydra--pad-or-trunc-hint (c1 (quote foo)) 14)") . ("a" nil (c1 'foo)))
