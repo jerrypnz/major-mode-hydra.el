@@ -85,7 +85,11 @@
     (cond
      ((char-or-string-p hint)
       (if toggle-p
-          (let* ((expr (prin1-to-string `(pretty-hydra-toggle ,hint (bound-and-true-p ,cmd))))
+          (let* ((status-expr (cond
+                               ((eq toggle-p t)  `(bound-and-true-p ,cmd))
+                               ((listp toggle-p) toggle-p)
+                               (t                `(bound-and-true-p ,toggle-p))))
+                 (expr (prin1-to-string `(pretty-hydra-toggle ,hint ,status-expr)))
                  (width (+ width (- (+ (length expr) 2) (+ (length hint) 4)))))
             (list (s-pad-right width " " (format " _%s_: %%s%s" key expr))))
         (list (s-pad-right width " " (format " _%s_: %s" key hint))))) ;; string hint
