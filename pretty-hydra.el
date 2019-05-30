@@ -179,10 +179,13 @@ The result is a new plist."
                    (append (lax-plist-get old new-column)
                            (lax-plist-get new new-column)))))
 
-(defun pretty-hydra--generate (name body heads-plist func)
-  "Helper function to generate hydras.
-See `pretty-hydra-define'."
-  (let* ((separator (or (plist-get body :separator) "─"))
+(defun pretty-hydra--generate (name body heads-plist redefine-p)
+  "Helper function to generate expressions with given NAME, BODY, HEADS-PLIST.
+If REDEFINE-P is true, use `defhydra+' instead which allows
+redefining an existing hydra.  See `pretty-hydra-define' and
+`pretty-hydra-define+'."
+  (let* ((func      (if redefine-p 'defhydra+ 'defhydra))
+         (separator (or (plist-get body :separator) "─"))
          (title     (plist-get body :title))
          (formatter (or (plist-get body :formatter)
                         #'identity))
@@ -239,22 +242,36 @@ HEADS-PLIST is a plist of columns of hydra heads.  The keys of
 the plist should be column names.  The values should be lists of
 hydra heads.  Each head has exactly the same syntax as that of
 `defhydra', except hint is required for the head to appear in the
-docstring."
+docstring.  The following additional options are supported:
+
+  - `:width' the max width of a dynamic hint, used to calculate
+    the final width of the entire column.  It is ignored when the
+    hint is a string.
+
+  - `:toggle' when specified, it makes the head a toggle and adds
+    an indicator to the end of the hint for the status of the
+    toggle.  The value of this option can be a symbol, an s-exp
+    or t.  The toggle status is read from the given variable, by
+    evaluating the given expression or checking the `cmd' as if
+    it's a variable.  The latter is especially useful for minior
+    modes, e.g.
+
+       (\"n\" `linum-mode' \"line number\" :toggle t)"
   (declare (indent defun))
-  (pretty-hydra--generate name body heads-plist 'defhydra))
+  (pretty-hydra--generate name body heads-plist nil))
 
 (defmacro pretty-hydra-define+ (name body heads-plist)
-  "Redefine an existing pretty-hydra by adding new heads.
+  "Redefine an existing pretty-hydra by adding new HEADS-PLIST.
 If heads are added to a column already in NAME, the heads are
-appended to that column.
-Arguments are same as of `pretty-hydra-define'."
+appended to that column.  Existing BODY is replaced with the new
+one if specified.  Arguments are the same as `pretty-hydra-define'."
   (declare (indent defun))
   (pretty-hydra--generate
    name
    (or body (hydra--prop name "/pretty-body"))
    (pretty-hydra--merge-plists
     (hydra--prop name "/heads-plist") heads-plist)
-   'defhydra+))
+   t))
 
 (defface pretty-hydra-toggle-on-face
   '((t (:inherit 'font-lock-keyword-face)))
