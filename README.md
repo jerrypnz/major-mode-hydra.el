@@ -190,33 +190,29 @@ expected `:width` in head plists.
 
 Dynamic hints are useful in toggles where it shows different hint
 based on the state of the toggle. pretty-hydra has built-in support
-for such use cases. You can enable it by setting `:toggle` to `t` in head
-plist. In this case, the command should also be a variable that
+for such use cases. You can enable it by setting `:toggle` to `t` in
+head plist. In this case, the command should also be a variable that
 indicates whether the toggle is on or off. This is the case for pretty
-much all minor modes.
+much all minor modes. `:toggle` can also be set to a symbol or s-exp
+in which case it's evaluated to get the status of the toggle.
 
 The following is an example toggles hydra:
 
 ``` elisp
 (pretty-hydra-define jp-toggles
-  (:hint nil :color amaranth :quit-key "q" :title jp-toggles--title)
+  (:hint nil :color amaranth :quit-key "q" :title "Toggles")
   ("Basic"
    (("n" linum-mode "line number" :toggle t)
-    ("w" whitespace-mode "whitespace" :toggle t)
-    ("W" whitespace-cleanup-mode "whitespace cleanup" :toggle t)
-    ("r" rainbow-mode "rainbow" :toggle t)
-    ("L" page-break-lines-mode "page break lines" :toggle t))
+    ("w" whitespace-mode "whitespace" :toggle t))
    "Highlight"
-   (("s" symbol-overlay-mode "symbol" :toggle t)
-    ("l" hl-line-mode "line" :toggle t)
+   (("l" hl-line-mode "line" :toggle t)
     ("x" highlight-sexp-mode "sexp" :toggle t)
     ("t" hl-todo-mode "todo" :toggle t))
    "UI"
-   (("d" jp-themes-toggle-light-dark (pretty-hydra-toggle "dark theme" jp-current-theme-dark-p)))
-   "Coding"
-   (("p" smartparens-mode "smartparens" :toggle t)
-    ("P" smartparens-strict-mode "smartparens strict" :toggle t)
-    ("f" flycheck-mode "flycheck" :toggle t))))
+   (("d" jp-themes-toggle-light-dark "dark theme" :toggle jp-current-theme-dark-p))
+   "Debug"
+   (("D" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
+    ("X" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))))
 ```
 
 ![example2](screenshots/example2.png)
@@ -224,10 +220,10 @@ The following is an example toggles hydra:
 The on/off faces can be customized through
 `pretty-hydra-toggle-on-face` and `pretty-hydra-toggle-off-face`.
 
-You can use `pretty-hydra-define+` in order to add heads to an already existing
-`pretty-hydra`. New heads are appended to existing columns, if their names match
-(otherwise new columns are created). Here's an example redefining the
-`jp-window` hydra we created above.
+You can use `pretty-hydra-define+` in order to add heads to an already
+existing `pretty-hydra`. New heads are appended to existing columns,
+if their names match (otherwise new columns are created). Here's an
+example redefining the `jp-window` hydra we created above.
 
 ```elisp
 (pretty-hydra-define+ jp-window ()
