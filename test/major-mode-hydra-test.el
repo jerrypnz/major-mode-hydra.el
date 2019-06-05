@@ -99,6 +99,64 @@
       ("q" foobar "foobar"))
     (should (equal major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))))
 
+(ert-deftest major-mode-hydra-test--define ()
+  (let ((major-mode-hydra-title-generator (lambda (s) (format "%s bindings" s)))
+        (major-mode-hydra-invisible-quit-key "q")
+        (major-mode-hydra-separator "-"))
+    (should (equal '(pretty-hydra-define major-mode-hydras/foo-mode
+                     (:hint nil
+                      :color teal
+                      :title "foo-mode bindings"
+                      :separator "-"
+                      :quit-key "q" )
+                     ("Foo"
+                      (("a" foo "foo")
+                       ("b" bar "bar" :a 1))))
+                   (macroexpand-1 '(major-mode-hydra-define foo-mode nil
+                                    ("Foo"
+                                     (("a" foo "foo")
+                                      ("b" bar "bar" :a 1)))))))))
+
+(ert-deftest major-mode-hydra-test--define-multiple ()
+  (let ((major-mode-hydra-title-generator (lambda (s) (format "%s bindings" s)))
+        (major-mode-hydra-invisible-quit-key "q")
+        (major-mode-hydra-separator "-"))
+    (should (equal
+             '(progn
+               (pretty-hydra-define major-mode-hydras/foo-mode
+                   (:hint nil :color teal :title "foo-mode bindings" :separator "-" :quit-key "q" )
+                 ("Foo"
+                  (("a" foo "foo")
+                   ("b" bar "bar" :a 1))))
+               (pretty-hydra-define major-mode-hydras/bar-mode
+                   (:hint nil :color teal :title "bar-mode bindings" :separator "-" :quit-key "q" )
+                 ("Foo"
+                  (("a" foo "foo")
+                   ("b" bar "bar" :a 1)))))
+
+             (macroexpand-1 '(major-mode-hydra-define (foo-mode bar-mode) nil
+                              ("Foo"
+                               (("a" foo "foo")
+                                ("b" bar "bar" :a 1)))))))))
+
+(ert-deftest major-mode-hydra-test--define+ ()
+  (let ((major-mode-hydra-title-generator (lambda (s) (format "%s bindings" s)))
+        (major-mode-hydra-invisible-quit-key "q")
+        (major-mode-hydra-separator "-"))
+    (should (equal '(pretty-hydra-define+ major-mode-hydras/foo-mode
+                     (:hint nil
+                      :color teal
+                      :title "foo-mode bindings"
+                      :separator "-"
+                      :quit-key "q" )
+                     ("Foo"
+                      (("a" foo "foo")
+                       ("b" bar "bar" :a 1))))
+                   (macroexpand-1 '(major-mode-hydra-define+ foo-mode nil
+                                    ("Foo"
+                                     (("a" foo "foo")
+                                      ("b" bar "bar" :a 1)))))))))
+
 (provide 'major-mode-hydra-test)
 
 ;;; major-mode-hydra-test.el ends here

@@ -4,7 +4,7 @@
 
 ;; Author: Jerry Peng <pr2jerry@gmail.com>
 ;; URL: https://github.com/jerrypnz/major-mode-hydra.el
-;; Version: 0.1.1
+;; Version: 0.2.0
 ;; Package-Requires: ((hydra "0.15.0") (s "1.12.0") (dash "2.15.0") (dash-functional "1.2.0") (emacs "24"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -168,7 +168,13 @@ This is used to create the HEADS to be passed to `defhydra'."
        (-remove (-lambda ((opt _)) (member opt pretty-hydra--opts)))
        (-mapcat #'identity)))
 
-(defun pretty-hydra--merge-plists (old new)
+(defun pretty-hydra--dedupe-heads (heads)
+  "Return HEADS with duplicates removed.
+Two heads are considered duplicate if they have the same key."
+  (let ((-compare-fn (lambda (x y) (equal (car x) (car y)))))
+    (-distinct heads)))
+
+(defun pretty-hydra--merge-heads (old new)
   "Merge items from NEW plist into the OLD plist.
 The result is a new plist."
   (dolist (new-column
@@ -176,8 +182,9 @@ The result is a new plist."
                     collect key)
            old)
     (lax-plist-put old new-column
-                   (append (lax-plist-get old new-column)
-                           (lax-plist-get new new-column)))))
+                   (pretty-hydra--dedupe-heads
+                    (append (lax-plist-get old new-column)
+                            (lax-plist-get new new-column))))))
 
 (defun pretty-hydra--generate (name body heads-plist redefine-p)
   "Helper function to generate expressions with given NAME, BODY, HEADS-PLIST.
@@ -269,7 +276,7 @@ one if specified.  Arguments are the same as `pretty-hydra-define'."
   (pretty-hydra--generate
    name
    (or body (hydra--prop name "/pretty-body"))
-   (pretty-hydra--merge-plists
+   (pretty-hydra--merge-heads
     (hydra--prop name "/heads-plist") heads-plist)
    t))
 
