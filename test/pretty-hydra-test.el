@@ -72,6 +72,45 @@
                     (("c" foobar (foo) :width 20 :exit nil)
                      ("d" barfoo)))))))
 
+(ert-deftest pretty-hydra-test--merge-heads ()
+  (should (equal '("C1"
+                   (("a" foo "foo")
+                    ("b" bar))
+                   "C2"
+                   (("c" foobar)
+                    ("d" barfoo)))
+                 (pretty-hydra--merge-heads
+                  '("C1"
+                    (("a" foo "foo")
+                     ("b" bar)))
+                  '("C2"
+                    (("c" foobar)
+                     ("d" barfoo))))))
+  (should (equal '("C1"
+                   (("a" foo "foo")
+                    ("b" bar))
+                   "C2"
+                   (("c" foobar)
+                    ("d" barfoo)))
+                 (pretty-hydra--merge-heads
+                  '("C1"
+                    (("a" foo "foo")
+                     ("b" bar))
+                    "C2"
+                    (("c" foobar)
+                     ("d" barfoo)))
+                  '("C2"
+                    (("c" foobar+)
+                     ("d" barfoo+))))))
+  (should (equal '("C2"
+                    (("c" foobar+)
+                     ("d" barfoo+)))
+                 (pretty-hydra--merge-heads
+                  nil
+                  '("C2"
+                    (("c" foobar+)
+                     ("d" barfoo+)))))))
+
 (ert-deftest pretty-hydra-test--maybe-add-title ()
   (dolist (test '((" foo\ndocstring" . "foo")
                   (" %s`foo\ndocstring" . foo)

@@ -177,14 +177,14 @@ Two heads are considered duplicate if they have the same key."
 (defun pretty-hydra--merge-heads (old new)
   "Merge items from NEW plist into the OLD plist.
 The result is a new plist."
-  (dolist (new-column
-           (cl-loop for (key _value) on new by 'cddr
-                    collect key)
-           old)
-    (lax-plist-put old new-column
-                   (pretty-hydra--dedupe-heads
-                    (append (lax-plist-get old new-column)
-                            (lax-plist-get new new-column))))))
+  (let ((cols (cl-loop for (key _value) on new by 'cddr collect key)))
+    (-reduce-from (lambda (acc x)
+                    (lax-plist-put acc x
+                                   (pretty-hydra--dedupe-heads
+                                    (append (lax-plist-get acc x)
+                                            (lax-plist-get new x)))))
+                  old
+                  cols)))
 
 (defun pretty-hydra--generate (name body heads-plist redefine-p)
   "Helper function to generate expressions with given NAME, BODY, HEADS-PLIST.
