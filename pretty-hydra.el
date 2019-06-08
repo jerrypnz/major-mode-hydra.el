@@ -267,6 +267,13 @@ docstring.  The following additional options are supported:
   (declare (indent defun))
   (pretty-hydra--generate name body heads-plist nil))
 
+(defun pretty-hydra--prop-or-nil (name prop-name)
+  "Return value of PROP-NAME for hydra with given NAME, or nil if the property doesn't exist."
+  (let ((s (intern (concat (symbol-name name) prop-name))))
+    (when (boundp s)
+      (symbol-value s))))
+
+;;;###autoload
 (defmacro pretty-hydra-define+ (name body heads-plist)
   "Redefine an existing pretty-hydra by adding new HEADS-PLIST.
 If heads are added to a column already in NAME, the heads are
@@ -275,9 +282,9 @@ one if specified.  Arguments are the same as `pretty-hydra-define'."
   (declare (indent defun))
   (pretty-hydra--generate
    name
-   (or body (hydra--prop name "/pretty-body"))
+   (or body (pretty-hydra--prop-or-nil name "/pretty-body"))
    (pretty-hydra--merge-heads
-    (hydra--prop name "/heads-plist") heads-plist)
+    (pretty-hydra--prop-or-nil name "/heads-plist") heads-plist)
    t))
 
 (defface pretty-hydra-toggle-on-face
