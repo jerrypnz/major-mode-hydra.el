@@ -151,7 +151,7 @@ This is used to create the HEADS to be passed to `defhydra'."
   "Add TITLE to the DOCSTRING if it's not nil, other return DOCSTRING unchanged."
   (if (null title)
       docstring
-    (format "\n %s\n%s"
+    (format " %s\n%s"
             (cond
              ((char-or-string-p title) title)
              ((symbolp title)          (format "%%s`%s" title))
