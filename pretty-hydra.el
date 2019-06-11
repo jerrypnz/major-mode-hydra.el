@@ -4,7 +4,7 @@
 
 ;; Author: Jerry Peng <pr2jerry@gmail.com>
 ;; URL: https://github.com/jerrypnz/major-mode-hydra.el
-;; Version: 0.1.1
+;; Version: 0.2.0
 ;; Package-Requires: ((hydra "0.15.0") (s "1.12.0") (dash "2.15.0") (dash-functional "1.2.0") (emacs "24"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -151,7 +151,7 @@ This is used to create the HEADS to be passed to `defhydra'."
   "Add TITLE to the DOCSTRING if it's not nil, other return DOCSTRING unchanged."
   (if (null title)
       docstring
-    (format "\n %s\n%s"
+    (format " %s\n%s"
             (cond
              ((char-or-string-p title) title)
              ((symbolp title)          (format "%%s`%s" title))
@@ -168,16 +168,23 @@ This is used to create the HEADS to be passed to `defhydra'."
        (-remove (-lambda ((opt _)) (member opt pretty-hydra--opts)))
        (-mapcat #'identity)))
 
-(defun pretty-hydra--merge-plists (old new)
+(defun pretty-hydra--dedupe-heads (heads)
+  "Return HEADS with duplicates removed.
+Two heads are considered duplicate if they have the same key."
+  (let ((-compare-fn (lambda (x y) (equal (car x) (car y)))))
+    (-distinct heads)))
+
+(defun pretty-hydra--merge-heads (old new)
   "Merge items from NEW plist into the OLD plist.
 The result is a new plist."
-  (dolist (new-column
-           (cl-loop for (key _value) on new by 'cddr
-                    collect key)
-           old)
-    (lax-plist-put old new-column
-                   (append (lax-plist-get old new-column)
-                           (lax-plist-get new new-column)))))
+  (let ((cols (cl-loop for (key _value) on new by 'cddr collect key)))
+    (-reduce-from (lambda (acc x)
+                    (lax-plist-put acc x
+                                   (pretty-hydra--dedupe-heads
+                                    (append (lax-plist-get acc x)
+                                            (lax-plist-get new x)))))
+                  old
+                  cols)))
 
 (defun pretty-hydra--generate (name body heads-plist redefine-p)
   "Helper function to generate expressions with given NAME, BODY, HEADS-PLIST.
@@ -260,6 +267,13 @@ docstring.  The following additional options are supported:
   (declare (indent defun))
   (pretty-hydra--generate name body heads-plist nil))
 
+(defun pretty-hydra--prop-or-nil (name prop-name)
+  "Return value of PROP-NAME for hydra with given NAME, or nil if the property doesn't exist."
+  (let ((s (intern (concat (symbol-name name) prop-name))))
+    (when (boundp s)
+      (symbol-value s))))
+
+;;;###autoload
 (defmacro pretty-hydra-define+ (name body heads-plist)
   "Redefine an existing pretty-hydra by adding new HEADS-PLIST.
 If heads are added to a column already in NAME, the heads are
@@ -268,9 +282,9 @@ one if specified.  Arguments are the same as `pretty-hydra-define'."
   (declare (indent defun))
   (pretty-hydra--generate
    name
-   (or body (hydra--prop name "/pretty-body"))
-   (pretty-hydra--merge-plists
-    (hydra--prop name "/heads-plist") heads-plist)
+   (or body (pretty-hydra--prop-or-nil name "/pretty-body"))
+   (pretty-hydra--merge-heads
+    (pretty-hydra--prop-or-nil name "/heads-plist") heads-plist)
    t))
 
 (defface pretty-hydra-toggle-on-face
