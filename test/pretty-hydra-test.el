@@ -90,8 +90,8 @@
                    (("a" foo "foo")
                     ("b" bar))
                    "C2"
-                   (("c" foobar)
-                    ("d" barfoo)))
+                   (("c" foobar+)
+                    ("d" barfoo+)))
                  (pretty-hydra--merge-heads
                   '("C1"
                     (("a" foo "foo")

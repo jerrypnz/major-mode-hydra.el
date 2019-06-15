@@ -171,8 +171,9 @@ This is used to create the HEADS to be passed to `defhydra'."
 (defun pretty-hydra--dedupe-heads (heads)
   "Return HEADS with duplicates removed.
 Two heads are considered duplicate if they have the same key."
-  (let ((-compare-fn (lambda (x y) (equal (car x) (car y)))))
-    (-distinct heads)))
+  (->> heads
+       (-group-by #'car)
+       (-map (-lambda ((_ . xs)) (-last-item xs)))))
 
 (defun pretty-hydra--merge-heads (old new)
   "Merge items from NEW plist into the OLD plist.
