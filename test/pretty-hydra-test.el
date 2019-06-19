@@ -41,11 +41,33 @@
 
 (ert-deftest pretty-hydra-test--normalize-head ()
   (dolist (test '((("a" nil "c1") . ("a" nil "c1"))
-                  (("a" nil)   . ("a" nil))
+                  (("a" nil nil)   . ("a" nil))
+                  (("a" foo "foo") . ("a" foo))
                   (("a" nil "c1" :exit t) . ("a" nil "c1" :exit t))
-                  (("a" nil nil :exit t) . ("a" nil :exit t))))
+                  (("a" nil nil :exit t) . ("a" nil :exit t))
+                  (("a" foo "foo" :exit t) . ("a" foo :exit t))))
     (-let [(expected . head) test]
-      (should (equal expected (pretty-hydra--normalize-head head))))))
+      (should (equal expected (pretty-hydra--normalize-head! head))))))
+
+(ert-deftest pretty-hydra-test--normalize-heads-plist ()
+  (should (equal '("Foo"
+                   (("a" nil nil)
+                    ("b" foo "foo"))
+                   "Bar"
+                   (("c" nil "c1" :exit t)
+                    ("d" nil nil :exit t)
+                    ("e" foo "foo" :exit t)
+                    ("f" (bar) nil :exit t)))
+                 (pretty-hydra--normalize-heads-plist!
+                  '("Foo"
+                    (("a" nil)
+                     ("b" foo))
+                   "Bar"
+                   (("c" nil "c1" :exit t)
+                    ("d" nil :exit t)
+                    ("e" foo :exit t)
+                    ("f" (bar) :exit t)))))
+          ))
 
 (ert-deftest pretty-hydra-test--cell-docstring ()
   (dolist (test '(((" _a_: c1            ") . ("a" nil "c1"))

@@ -36,12 +36,24 @@
 (require 's)
 (require 'hydra)
 
-(defun pretty-hydra--normalize-head (head)
+(defun pretty-hydra--normalize-head! (head)
   "Normalize HEAD so that it always have a hint."
-  (-let [(_ _ hint) head]
-    (when (keywordp hint)
-      (setcdr (cdr head) (cons nil (cddr head))))
+  (-let [(_ cmd hint) head]
+    (when (or (keywordp hint)
+              (<= (length head) 2))
+      (-let [hint (if (and cmd (symbolp cmd))
+                      (symbol-name cmd)
+                    nil)]
+        (setcdr (cdr head) (cons hint (cddr head)))))
     head))
+
+(defun pretty-hydra--normalize-heads-plist! (heads-plist)
+  "Normalize HEADS-PLIST.  See `pretty-hydra--normalize-head'."
+  (--each-indexed heads-plist
+    (when (= (% it-index 2) 1)
+      (dolist (head it)
+        (pretty-hydra--normalize-head! head))))
+  heads-plist)
 
 (defun pretty-hydra--cell-width (key hint-width)
   "Calculate the width of a head cell based on the KEY and HINT-WIDTH."
@@ -264,7 +276,7 @@ docstring.  The following additional options are supported:
 
        (\"n\" `linum-mode' \"line number\" :toggle t)"
   (declare (indent defun))
-  (pretty-hydra--generate name body heads-plist))
+  (pretty-hydra--generate name body (pretty-hydra--normalize-heads-plist! heads-plist)))
 
 (defun pretty-hydra--prop-or-nil (name prop-name)
   "Return value of PROP-NAME for hydra with given NAME, or nil if the property doesn't exist."
@@ -283,7 +295,8 @@ one if specified.  Arguments are the same as `pretty-hydra-define'."
    name
    (or body (pretty-hydra--prop-or-nil name "/pretty-body"))
    (pretty-hydra--merge-heads
-    (pretty-hydra--prop-or-nil name "/heads-plist") heads-plist)))
+    (pretty-hydra--prop-or-nil name "/heads-plist")
+    (pretty-hydra--normalize-heads-plist! heads-plist))))
 
 (defface pretty-hydra-toggle-on-face
   '((t (:inherit 'font-lock-keyword-face)))
