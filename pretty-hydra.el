@@ -187,13 +187,10 @@ The result is a new plist."
                   old
                   cols)))
 
-(defun pretty-hydra--generate (name body heads-plist redefine-p)
+(defun pretty-hydra--generate (name body heads-plist)
   "Helper function to generate expressions with given NAME, BODY, HEADS-PLIST.
-If REDEFINE-P is true, use `defhydra+' instead which allows
-redefining an existing hydra.  See `pretty-hydra-define' and
-`pretty-hydra-define+'."
-  (let* ((func      (if redefine-p 'defhydra+ 'defhydra))
-         (separator (or (plist-get body :separator) "─"))
+See `pretty-hydra-define' and `pretty-hydra-define+'."
+  (let* ((separator (or (plist-get body :separator) "─"))
          (title     (plist-get body :title))
          (formatter (or (plist-get body :formatter)
                         #'identity))
@@ -209,17 +206,18 @@ redefining an existing hydra.  See `pretty-hydra-define' and
                   heads))
          (body (pretty-hydra--remove-custom-opts body)))
     `(progn
-       (set (defvar ,(intern (format "%S/heads-plist" name))
-              nil
-              ,(format "heads-plist of %S." name))
-            (quote ,heads-plist))
-       (set (defvar ,(intern (format "%S/pretty-body" name))
-              nil
-              ,(format "pretty-body of %S." name))
-            (quote ,body))
-       (,func ,name ,body
-              ,docstring
-              ,@heads))))
+       (eval-and-compile
+         (set (defvar ,(intern (format "%S/heads-plist" name))
+                nil
+                ,(format "heads-plist of %S." name))
+              (quote ,heads-plist))
+         (set (defvar ,(intern (format "%S/pretty-body" name))
+                nil
+                ,(format "pretty-body of %S." name))
+              (quote ,body)))
+       (defhydra ,name ,body
+         ,docstring
+         ,@heads))))
 
 ;;;###autoload
 (defmacro pretty-hydra-define (name body heads-plist)
@@ -266,7 +264,7 @@ docstring.  The following additional options are supported:
 
        (\"n\" `linum-mode' \"line number\" :toggle t)"
   (declare (indent defun))
-  (pretty-hydra--generate name body heads-plist nil))
+  (pretty-hydra--generate name body heads-plist))
 
 (defun pretty-hydra--prop-or-nil (name prop-name)
   "Return value of PROP-NAME for hydra with given NAME, or nil if the property doesn't exist."
@@ -285,8 +283,7 @@ one if specified.  Arguments are the same as `pretty-hydra-define'."
    name
    (or body (pretty-hydra--prop-or-nil name "/pretty-body"))
    (pretty-hydra--merge-heads
-    (pretty-hydra--prop-or-nil name "/heads-plist") heads-plist)
-   t))
+    (pretty-hydra--prop-or-nil name "/heads-plist") heads-plist)))
 
 (defface pretty-hydra-toggle-on-face
   '((t (:inherit 'font-lock-keyword-face)))
