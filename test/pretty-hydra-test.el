@@ -25,6 +25,7 @@
 
 ;;; Code:
 
+(require 'use-package)
 (require 'pretty-hydra)
 
 (ert-deftest pretty-hydra-test--calc-column-width ()
@@ -140,6 +141,47 @@
                   ("docstring" . nil)))
     (-let [(expected . title) test]
       (should (equal expected (pretty-hydra--maybe-add-title title "docstring"))))))
+
+(ert-deftest pretty-hydra-test--get-cmds ()
+  (should (equal '((bar . command) (foo . command))
+                 (pretty-hydra--get-cmds '("Foo"
+                   (("a" nil nil)
+                    ("b" foo "foo"))
+                   "Bar"
+                   (("d" nil)
+                    ("e" bar "foo" :exit t)
+                    ("f" (foo bar) nil :exit t)))))))
+
+(ert-deftest pretty-hydra-test--use-package-normalize ()
+  (should (equal '((foo-hydra
+                    nil
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   (foo-hydra
+                    (:title "Foo Commands")
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   (my-foo-hydra
+                    (:title "Foo Commands" :color teal)
+                    ("Foo"
+                     ("a" foo "call foo"))))
+                 (pretty-hydra--use-package-normalize
+                  'foo
+                  :pretty-hydra
+                  '(("Foo"
+                     ("a" foo "call foo"))
+                    ((:title "Foo Commands")
+                     ("Foo"
+                      ("a" foo "call foo")))
+                    (my-foo-hydra
+                     (:title "Foo Commands" :color teal)
+                     ("Foo"
+                      ("a" foo "call foo"))))))))
+
+(ert-deftest pretty-hydra-test--use-package-add-keyword ()
+  (let ((use-package-keywords '(:bind-keymap* :bind)))
+    (pretty-hydra--use-package-add-keyword :pretty-hydra)
+    (should (equal '(:bind-keymap* :pretty-hydra :bind) use-package-keywords))))
 
 (provide 'pretty-hydra-test)
 
