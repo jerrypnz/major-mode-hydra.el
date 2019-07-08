@@ -214,6 +214,39 @@ related major modes."
   (interactive)
   (major-mode-hydra-dispatch major-mode))
 
+(declare-function use-package-concat "use-package-core")
+(declare-function use-package-process-keywords "use-package-core")
+(defvar use-package-keywords)
+
+(defun major-mode-hydra--use-package-normalize (package _keyword arglists)
+  "Normalize `use-package' `:major-mode-hydra' keyword ARGLISTS for PACKAGE."
+  (-map (-partial #'pretty-hydra--normalize-args package) arglists))
+
+(defun major-mode-hydra--use-package-handler (package _keyword args rest state)
+  "Generate major-mode-hydra defs for PACKAGE using ARGS with `use-package' STATE and REST keywords."
+  (use-package-concat
+   (use-package-process-keywords package rest state)
+   (-map (-lambda ((name body heads-plist))
+           `(major-mode-hydra-define+ ,name ,body ,heads-plist))
+         args)))
+
+(defun major-mode-hydra--use-package-autoloads (_pkg-name _keyword args)
+  "Return a list of `use-package' autoloads for commands found in ARGS."
+  (-mapcat (-lambda ((_ _ heads-plist)) (pretty-hydra--get-cmds heads-plist)) args))
+
+(defun major-mode-hydra--enable-use-package ()
+  "Enable `use-package' integration.
+Called automatically when `use-package' is present and
+`pretty-hydra-enable-use-package' is set to t."
+  (with-eval-after-load 'use-package-core
+    (pretty-hydra--use-package-add-keyword :mode-hydra)
+    (defalias 'use-package-normalize/:mode-hydra #'major-mode-hydra--use-package-normalize)
+    (defalias 'use-package-autoloads/:mode-hydra #'major-mode-hydra--use-package-autoloads)
+    (defalias 'use-package-handler/:mode-hydra #'major-mode-hydra--use-package-handler)))
+
+(when pretty-hydra-enable-use-package
+  (major-mode-hydra--enable-use-package))
+
 (provide 'major-mode-hydra)
 
 ;;; major-mode-hydra.el ends here

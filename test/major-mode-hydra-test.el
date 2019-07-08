@@ -157,6 +157,32 @@
                                      (("a" foo "foo")
                                       ("b" bar "bar" :a 1)))))))))
 
+(ert-deftest major-mode-hydra-test--use-package-normalize ()
+  (should (equal '((foo-mode
+                    nil
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   (foo-mode
+                    (:title "Foo Commands")
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   (my-foo-mode
+                    (:title "Foo Commands" :color teal)
+                    ("Foo"
+                     ("a" foo "call foo"))))
+                 (major-mode-hydra--use-package-normalize
+                  'foo-mode
+                  :mode-hydra
+                  '(("Foo"
+                     ("a" foo "call foo"))
+                    ((:title "Foo Commands")
+                     ("Foo"
+                      ("a" foo "call foo")))
+                    (my-foo-mode
+                     (:title "Foo Commands" :color teal)
+                     ("Foo"
+                      ("a" foo "call foo"))))))))
+
 (provide 'major-mode-hydra-test)
 
 ;;; major-mode-hydra-test.el ends here
