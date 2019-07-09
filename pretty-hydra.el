@@ -223,7 +223,7 @@ See `pretty-hydra-define' and `pretty-hydra-define+'."
          (heads (if quit-key
                     (append heads `((,quit-key nil)))
                   heads))
-         (body (lax-plist-put (pretty-hydra--remove-custom-opts body) :hint nil)))
+         (body (lax-plist-put body :hint nil)))
     `(progn
        (eval-and-compile
          (set (defvar ,(intern (format "%S/heads-plist" name))
@@ -234,7 +234,7 @@ See `pretty-hydra-define' and `pretty-hydra-define+'."
                 nil
                 ,(format "pretty-body of %S." name))
               (quote ,body)))
-       (defhydra ,name ,body
+       (defhydra ,name ,(pretty-hydra--remove-custom-opts body)
          ,docstring
          ,@heads))))
 
