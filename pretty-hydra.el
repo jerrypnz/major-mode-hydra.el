@@ -140,7 +140,9 @@ is necessary to create the final table."
 SEPARATOR char is used to generate the separator line."
   (-let* ((head-columns (-partition 2 hydra-plist))
           (max-heads (->> head-columns
-                          (-map (-lambda ((_ heads)) (length heads)))
+                          (-map (-lambda ((_ heads))
+                                  (-count (-lambda ((_ _ hint)) hint)
+                                          heads)))
                           -max))
           (head-docstrings (-map (-lambda ((column-name heads))
                                    (pretty-hydra--gen-heads-docstring column-name separator heads max-heads))
@@ -168,7 +170,7 @@ This is used to create the HEADS to be passed to `defhydra'."
   "Add TITLE to the DOCSTRING if it's not nil, other return DOCSTRING unchanged."
   (if (null title)
       docstring
-    (format " %s\n%s"
+    (format "\n %s\n%s"
             (cond
              ((char-or-string-p title) title)
              ((symbolp title)          (format "%%s`%s" title))

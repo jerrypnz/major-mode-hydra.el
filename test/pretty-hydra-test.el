@@ -135,9 +135,9 @@
                      ("d" barfoo+)))))))
 
 (ert-deftest pretty-hydra-test--maybe-add-title ()
-  (dolist (test '((" foo\ndocstring" . "foo")
-                  (" %s`foo\ndocstring" . foo)
-                  (" %s(foo \"bar\")\ndocstring" . (foo "bar"))
+  (dolist (test '(("\n foo\ndocstring" . "foo")
+                  ("\n %s`foo\ndocstring" . foo)
+                  ("\n %s(foo \"bar\")\ndocstring" . (foo "bar"))
                   ("docstring" . nil)))
     (-let [(expected . title) test]
       (should (equal expected (pretty-hydra--maybe-add-title title "docstring"))))))
