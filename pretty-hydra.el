@@ -335,28 +335,35 @@ s-expressions are not included."
          do (push (cons cmd 'command) cmds)))
     cmds))
 
+(defconst pretty-hydra--use-package-arg-error
+  ":pretty-hydra wants a heads-plist and optionally a name and/or body in front")
+
 (defun pretty-hydra--normalize-args (default-name args)
   "Normalize `use-package' `:pretty-hydra' keyword ARGS using DEFAULT-NAME.
 ARGS are normalized to a list of NAME, BODY and HEADS-PLIST.
 DEFAULT-NAME is used if no name is given."
   (cond
    ((not (listp args))
-    (use-package-error ":pretty-hydra wants a heads-plist and optionally a name and body in front"))
-   ;; only the heads-plist, use package name + "-hydra" as hydra name and a
+    (use-package-error pretty-hydra--use-package-arg-error))
+   ;; only the heads-plist, use default-name
    ;; default body
    ((stringp (car args))
     `(,default-name nil ,args))
    ;; only the heads-plist but in a nested list
    ((and (= (length args) 1) (stringp (caar args)))
     `(,default-name nil ,@args))
-   ;; body + heads-plist, use package name + "-hydra" as hydra name
+   ;; body/name + heads-plist
    ((and (= (length args) 2) (stringp (caadr args)))
-    `(,default-name ,@args))
+    (if (and (listp (car args))
+             (or (keywordp (caar args))
+                 (null (caar args))))
+        `(,default-name ,@args) ;body + heads, use default-name
+      (cons (car args) (cons nil (cdr args))))) ;name + heads, insert nil body
    ;; name + body + heads-plist, return as is
-   ((and (= (length args) 3) (symbolp (car args)) (stringp (caaddr args)))
+   ((and (= (length args) 3) (stringp (caaddr args)))
     args)
    (t
-    (use-package-error ":pretty-hydra wants a heads-plist and optionally a name and a body"))))
+    (use-package-error pretty-hydra--use-package-arg-error))))
 
 (declare-function use-package-concat "use-package-core")
 (declare-function use-package-process-keywords "use-package-core")

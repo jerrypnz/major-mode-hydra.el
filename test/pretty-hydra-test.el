@@ -158,11 +158,31 @@
                     ("Foo"
                      ("a" foo "call foo")))
                    (foo-hydra
+                    nil
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   (foo-hydra
+                    nil
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   (foo-hydra
                     (:title "Foo Commands")
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   (you-foo-hydra
+                    nil
                     ("Foo"
                      ("a" foo "call foo")))
                    (my-foo-hydra
                     (:title "Foo Commands" :color teal)
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   ((foo1 foo2)
+                    (:title "Foo Commands" :color teal)
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   ((foo1 foo2)
+                    nil
                     ("Foo"
                      ("a" foo "call foo"))))
                  (pretty-hydra--use-package-normalize
@@ -170,11 +190,26 @@
                   :pretty-hydra
                   '(("Foo"
                      ("a" foo "call foo"))
+                    (("Foo"
+                      ("a" foo "call foo")))
+                    (nil
+                     ("Foo"
+                      ("a" foo "call foo")))
                     ((:title "Foo Commands")
                      ("Foo"
                       ("a" foo "call foo")))
+                    (you-foo-hydra
+                     ("Foo"
+                      ("a" foo "call foo")))
                     (my-foo-hydra
+                    (:title "Foo Commands" :color teal)
+                    ("Foo"
+                     ("a" foo "call foo")))
+                    ((foo1 foo2)
                      (:title "Foo Commands" :color teal)
+                     ("Foo"
+                      ("a" foo "call foo")))
+                    ((foo1 foo2)
                      ("Foo"
                       ("a" foo "call foo"))))))))
 
