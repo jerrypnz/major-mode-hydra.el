@@ -221,7 +221,9 @@ See `pretty-hydra-define' and `pretty-hydra-define+'."
                          (s-prepend "\n"))) ;; This is required, otherwise the docstring won't show up correctly
          (heads (pretty-hydra--get-heads heads-plist))
          (heads (if quit-key
-                    (append heads `((,quit-key nil)))
+                    (if (listp quit-key)
+                        (append heads (--map (list it nil) quit-key))
+                      (append heads `((,quit-key nil))))
                   heads))
          (body (lax-plist-put body :hint nil)))
     `(progn
@@ -259,9 +261,9 @@ pretty hydra specific ones:
     and return a decorated one.  It can be used to further
     customize the hydra docstring.
 
-  - `:quit-key' a key for quitting the hydra.  When specified, an
-    invisible head is created with this key for quitting the
-    hydra.
+  - `:quit-key' a key of list of keys for quitting the hydra.
+    When specified, invisible head(s) are created with the
+    specified keys for quitting the hydra.
 
 HEADS-PLIST is a plist of columns of hydra heads.  The keys of
 the plist should be column names.  The values should be lists of
