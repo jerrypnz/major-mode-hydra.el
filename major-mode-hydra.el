@@ -90,7 +90,9 @@ Overwrite existing hydra if there is one.
 
 MODE can also be a list of modes in which case the same hydras
 are created for all these modes.  Useful in multiple closely
-related major modes."
+related major modes.
+
+Refer to `pretty-hydra-define' for documentation about BODY and HEADS-PLIST."
   (declare (indent defun))
   (if (listp mode)
       `(progn
@@ -105,7 +107,9 @@ Add new heads if there is already an existing one.
 
 MODE can also be a list of modes in which case the same hydras
 are created for all these modes.  Useful in multiple closely
-related major modes."
+related major modes.
+
+Refer to `pretty-hydra-define' for documentation about BODY and HEADS-PLIST."
   (declare (indent defun))
   (if (listp mode)
       `(progn
