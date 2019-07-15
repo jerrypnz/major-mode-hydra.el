@@ -83,93 +83,6 @@ Overwrite existing hydra if OVERWRITE-P is t, otherwise add new heads to it."
          (df    (if overwrite-p 'pretty-hydra-define 'pretty-hydra-define+)))
     `(,df ,hydra-name ,body ,heads-plist)))
 
-(defvar major-mode-hydra--heads-alist nil
-  "An alist holding hydra heads for each major mode, keyed by the mode name.")
-
-(defvar major-mode-hydra--body-cache nil
-  "An alist holding compiled hydras for each major mode.
-
-Whenever `major-mode-hydra--heads-alist' is changed, the hydra
-for the mode gets recompiled.")
-
-(defun major-mode-hydra--get-or-recompile (mode)
-  "Get cached hydra for given MODE, or recompile it if there isn't a cached one."
-  (-if-let (hydra (alist-get mode major-mode-hydra--body-cache))
-      hydra
-    (-when-let (heads (alist-get mode major-mode-hydra--heads-alist))
-      (let* ((heads-plist (->> heads
-                           reverse
-                           (-group-by #'car)
-                           (-mapcat (-lambda ((column . heads))
-                                        (list column (-map #'cdr heads))))))
-             (hydra (eval (major-mode-hydra--generate mode nil heads-plist t))))
-        (setf (alist-get mode major-mode-hydra--body-cache) hydra)
-        hydra))))
-
-(defun major-mode-hydra--update-heads (heads column bindings)
-  "Update hydra HEADS in the given COLUMN with BINDINGS.
-BINDINGS is a list of hydra heads that are added to the COLUMN.
-Return updated HEADS."
-  (-reduce-from
-   (-lambda (heads (key command . hint-and-plist))
-       (-let [(hint . plist) (if (and (car hint-and-plist)
-                                      (not (keywordp (car hint-and-plist))))
-                                 hint-and-plist
-                               (cons (symbol-name command) hint-and-plist))]
-         (-if-let ((_ _ cmd) (-first (lambda (h) (equal (cadr h) key)) heads))
-             (progn
-               (message "\"%s\" has already been bound to %s" key cmd)
-               heads)
-           (if (and major-mode-hydra-invisible-quit-key
-                    (equal key major-mode-hydra-invisible-quit-key))
-               (progn
-                 (message "\"%s\" has already been bound to the invisible quit" major-mode-hydra-invisible-quit-key)
-                 heads)
-             (cons `(,column ,key ,command ,hint ,@plist) heads)))))
-   heads
-   bindings))
-
-(defun major-mode-hydra--bind-key (mode column bindings)
-  "Add BINDINGS (heads) for a MODE under the COLUMN."
-  (-as-> (alist-get mode major-mode-hydra--heads-alist) heads
-         (major-mode-hydra--update-heads heads column bindings)
-         (setf (alist-get mode major-mode-hydra--heads-alist)
-               heads))
-  ;; Invalidate cached hydra for the mode
-  (setq major-mode-hydra--body-cache
-        (assq-delete-all mode major-mode-hydra--body-cache)))
-
-(defun major-mode-hydra--unbind-all (mode)
-  "Remove all the hydra heads for MODE.  Introduced for testing."
-  (setq major-mode-hydra--body-cache
-        (assq-delete-all mode major-mode-hydra--body-cache))
-  (setq major-mode-hydra--heads-alist
-        (assq-delete-all mode major-mode-hydra--heads-alist)))
-
-(defun major-mode-hydra-clear-cache ()
-  "Clear major mode hydra cache.
-Cached hydras are then recreated the next time `major-mode-hydra'
-gets executed.  Useful when debugging an issue or force update a
-major mode hydra."
-  (interactive)
-  (setq major-mode-hydra--body-cache nil))
-
-;; Use a macro so that it's not necessary to quote things
-
-;;;###autoload
-(defmacro major-mode-hydra-bind (mode column &rest bindings)
-  "Add BINDINGS (heads) for a MODE under the COLUMN.
-
-MODE is the major mode name (symbol).  There is no need to quote it.
-
-COLUMN is a string to put the hydra heads under.
-
-BINDINGS is a list of hydra heads to be added.  Each head has
-exactly the same structure as that in `pretty-hydra-define' or
-`defhydra', except `:exit' is set to t by default."
-  (declare (indent 2))
-  `(major-mode-hydra--bind-key ',mode ,column ',bindings))
-
 ;;;###autoload
 (defmacro major-mode-hydra-define (mode body heads-plist)
   "Generate a major mode hydra for given MODE with given BODY and HEADS-PLIST.
@@ -177,7 +90,9 @@ Overwrite existing hydra if there is one.
 
 MODE can also be a list of modes in which case the same hydras
 are created for all these modes.  Useful in multiple closely
-related major modes."
+related major modes.
+
+Refer to `pretty-hydra-define' for documentation about BODY and HEADS-PLIST."
   (declare (indent defun))
   (if (listp mode)
       `(progn
@@ -192,7 +107,9 @@ Add new heads if there is already an existing one.
 
 MODE can also be a list of modes in which case the same hydras
 are created for all these modes.  Useful in multiple closely
-related major modes."
+related major modes.
+
+Refer to `pretty-hydra-define' for documentation about BODY and HEADS-PLIST."
   (declare (indent defun))
   (if (listp mode)
       `(progn
@@ -200,10 +117,24 @@ related major modes."
                  mode))
     (major-mode-hydra--generate mode body heads-plist)))
 
+;;;###autoload
+(defmacro major-mode-hydra-bind (mode column &rest bindings)
+  "Add BINDINGS (heads) for a MODE under the COLUMN.
+
+MODE is the major mode name (symbol).  There is no need to quote it.
+
+COLUMN is a string to put the hydra heads under.
+
+BINDINGS is a list of hydra heads to be added.  Each head has
+exactly the same structure as that in `pretty-hydra-define' or
+`defhydra', except `:exit' is set to t by default."
+  (declare (indent 2)
+           (obsolete major-mode-hydra-define+ "July 2019"))
+  `(major-mode-hydra-define+ ,mode nil ,(list column bindings)))
+
 (defun major-mode-hydra-dispatch (mode)
   "Summon the hydra for given MODE (if there is one)."
-  (let ((hydra (or (major-mode-hydra--get-or-recompile mode)
-                   (major-mode-hydra--body-name-for mode))))
+  (let ((hydra (major-mode-hydra--body-name-for mode)))
     (if (fboundp hydra)
         (call-interactively hydra)
       (message "Major mode hydra not found for %s" mode))))
@@ -213,6 +144,39 @@ related major modes."
   "Show the hydra for the current major mode."
   (interactive)
   (major-mode-hydra-dispatch major-mode))
+
+(declare-function use-package-concat "use-package-core")
+(declare-function use-package-process-keywords "use-package-core")
+(defvar use-package-keywords)
+
+(defun major-mode-hydra--use-package-normalize (package _keyword arglists)
+  "Normalize `use-package' `:major-mode-hydra' keyword ARGLISTS for PACKAGE."
+  (-map (-partial #'pretty-hydra--normalize-args package) arglists))
+
+(defun major-mode-hydra--use-package-handler (package _keyword args rest state)
+  "Generate major-mode-hydra defs for PACKAGE using ARGS with `use-package' STATE and REST keywords."
+  (use-package-concat
+   (use-package-process-keywords package rest state)
+   (-map (-lambda ((name body heads-plist))
+           `(major-mode-hydra-define+ ,name ,body ,heads-plist))
+         args)))
+
+(defun major-mode-hydra--use-package-autoloads (_pkg-name _keyword args)
+  "Return a list of `use-package' autoloads for commands found in ARGS."
+  (-mapcat (-lambda ((_ _ heads-plist)) (pretty-hydra--get-cmds heads-plist)) args))
+
+(defun major-mode-hydra--enable-use-package ()
+  "Enable `use-package' integration.
+Called automatically when `use-package' is present and
+`pretty-hydra-enable-use-package' is set to t."
+  (with-eval-after-load 'use-package-core
+    (pretty-hydra--use-package-add-keyword :mode-hydra)
+    (defalias 'use-package-normalize/:mode-hydra #'major-mode-hydra--use-package-normalize)
+    (defalias 'use-package-autoloads/:mode-hydra #'major-mode-hydra--use-package-autoloads)
+    (defalias 'use-package-handler/:mode-hydra #'major-mode-hydra--use-package-handler)))
+
+(when pretty-hydra-enable-use-package
+  (major-mode-hydra--enable-use-package))
 
 (provide 'major-mode-hydra)
 

@@ -27,78 +27,6 @@
 
 (require 'major-mode-hydra)
 
-(ert-deftest major-mode-hydra-test--bind-key--empty-heads-alist ()
-  (let ((major-mode-hydra--heads-alist nil))
-    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("v" emacs-version "Emacs Version"))
-    (should (equal major-mode-hydra--heads-alist
-                   '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "Emacs Version")))))))
-
-(ert-deftest major-mode-hydra-test--bind-key--cmd-name-as-hint ()
-  (let ((major-mode-hydra--heads-alist nil))
-    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("v" emacs-version))
-    (should (equal major-mode-hydra--heads-alist
-                   '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))))
-
-(ert-deftest major-mode-hydra-test--bind-key--head-opts ()
-  (let ((major-mode-hydra--heads-alist nil))
-    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("v" emacs-version :exit nil :color red))
-    (should (equal major-mode-hydra--heads-alist
-                   '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version" :exit nil :color red)))))))
-
-(ert-deftest major-mode-hydra-test--bind-key--hint-and-head-opts ()
-  (let ((major-mode-hydra--heads-alist nil))
-    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("v" emacs-version "Emacs Version" :exit nil :color red))
-    (should (equal major-mode-hydra--heads-alist
-                   '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "Emacs Version" :exit nil :color red)))))))
-
-(ert-deftest major-mode-hydra-test--bind-key--add-head-to-existing-column ()
-  (let ((major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))
-    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("b" foobar "Foobar"))
-    (should (equal major-mode-hydra--heads-alist
-                   '((emacs-lisp-mode ("Test Emacs" "b" foobar "Foobar")
-                                      ("Test Emacs" "v" emacs-version "emacs-version")))))))
-
-(ert-deftest major-mode-hydra-test--bind-key--new-column ()
-  (let ((major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))
-    (major-mode-hydra-bind emacs-lisp-mode "Foo"
-      ("b" foobar "Foobar"))
-    (should (equal major-mode-hydra--heads-alist
-                   '((emacs-lisp-mode ("Foo"        "b" foobar "Foobar")
-                                      ("Test Emacs" "v" emacs-version "emacs-version")))))))
-
-(ert-deftest major-mode-hydra-test--bind-key--duplicate-key ()
-  (let ((major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))
-    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("v" foobar "Foobar"))
-    (should (equal major-mode-hydra--heads-alist
-                   '((emacs-lisp-mode  ("Test Emacs" "v" emacs-version "emacs-version")))))))
-
-(ert-deftest major-mode-hydra-test--bind-key--nil-cmd ()
-  (let ((major-mode-hydra--heads-alist nil))
-    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("q" nil "quit"))
-    (should (equal major-mode-hydra--heads-alist
-                   '((emacs-lisp-mode ("Test Emacs" "q" nil "quit")))))))
-
-(ert-deftest major-mode-hydra-test--bind-key--nil-cmd-no-hint ()
-  (let ((major-mode-hydra--heads-alist nil))
-    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("q" nil))
-    (should (equal major-mode-hydra--heads-alist
-                   '((emacs-lisp-mode ("Test Emacs" "q" nil "nil")))))))
-
-(ert-deftest major-mode-hydra-test--bind-key--invisibe-quit ()
-  (let* ((major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version"))))
-         (major-mode-hydra-invisible-quit-key "q"))
-    (major-mode-hydra-bind emacs-lisp-mode "Test Emacs"
-      ("q" foobar "foobar"))
-    (should (equal major-mode-hydra--heads-alist '((emacs-lisp-mode ("Test Emacs" "v" emacs-version "emacs-version")))))))
-
 (ert-deftest major-mode-hydra-test--define ()
   (let ((major-mode-hydra-title-generator (lambda (s) (format "%s bindings" s)))
         (major-mode-hydra-invisible-quit-key "q")
@@ -156,6 +84,32 @@
                                     ("Foo"
                                      (("a" foo "foo")
                                       ("b" bar "bar" :a 1)))))))))
+
+(ert-deftest major-mode-hydra-test--use-package-normalize ()
+  (should (equal '((foo-mode
+                    nil
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   (foo-mode
+                    (:title "Foo Commands")
+                    ("Foo"
+                     ("a" foo "call foo")))
+                   (my-foo-mode
+                    (:title "Foo Commands" :color teal)
+                    ("Foo"
+                     ("a" foo "call foo"))))
+                 (major-mode-hydra--use-package-normalize
+                  'foo-mode
+                  :mode-hydra
+                  '(("Foo"
+                     ("a" foo "call foo"))
+                    ((:title "Foo Commands")
+                     ("Foo"
+                      ("a" foo "call foo")))
+                    (my-foo-mode
+                     (:title "Foo Commands" :color teal)
+                     ("Foo"
+                      ("a" foo "call foo"))))))))
 
 (provide 'major-mode-hydra-test)
 

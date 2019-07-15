@@ -36,6 +36,11 @@
 (require 's)
 (require 'hydra)
 
+(defcustom pretty-hydra-enable-use-package t
+  "Enable use-package integration when set to t."
+  :type 'boolean
+  :group 'pretty-hydra)
+
 (defun pretty-hydra--normalize-head! (head)
   "Normalize HEAD so that it always have a hint."
   (-let [(_ cmd hint) head]
@@ -135,7 +140,9 @@ is necessary to create the final table."
 SEPARATOR char is used to generate the separator line."
   (-let* ((head-columns (-partition 2 hydra-plist))
           (max-heads (->> head-columns
-                          (-map (-lambda ((_ heads)) (length heads)))
+                          (-map (-lambda ((_ heads))
+                                  (-count (-lambda ((_ _ hint)) hint)
+                                          heads)))
                           -max))
           (head-docstrings (-map (-lambda ((column-name heads))
                                    (pretty-hydra--gen-heads-docstring column-name separator heads max-heads))
@@ -150,10 +157,10 @@ SEPARATOR char is used to generate the separator line."
          (s-join "\n")
          (format "\n%s\n"))))
 
-(defun pretty-hydra--get-heads (hydra-plist)
-  "Extract key, command and options from the HYDRA-PLIST.
+(defun pretty-hydra--get-heads (heads-plist)
+  "Extract key, command and options from the HEADS-PLIST.
 This is used to create the HEADS to be passed to `defhydra'."
-  (->> hydra-plist
+  (->> heads-plist
        (-partition 2)
        (-mapcat #'cadr)
        (-map (-lambda ((key cmd _ . opts))
@@ -163,7 +170,7 @@ This is used to create the HEADS to be passed to `defhydra'."
   "Add TITLE to the DOCSTRING if it's not nil, other return DOCSTRING unchanged."
   (if (null title)
       docstring
-    (format " %s\n%s"
+    (format "\n %s\n%s"
             (cond
              ((char-or-string-p title) title)
              ((symbolp title)          (format "%%s`%s" title))
@@ -214,9 +221,11 @@ See `pretty-hydra-define' and `pretty-hydra-define+'."
                          (s-prepend "\n"))) ;; This is required, otherwise the docstring won't show up correctly
          (heads (pretty-hydra--get-heads heads-plist))
          (heads (if quit-key
-                    (append heads `((,quit-key nil)))
+                    (if (listp quit-key)
+                        (append heads (--map (list it nil) quit-key))
+                      (append heads `((,quit-key nil))))
                   heads))
-         (body (pretty-hydra--remove-custom-opts body)))
+         (body (lax-plist-put body :hint nil)))
     `(progn
        (eval-and-compile
          (set (defvar ,(intern (format "%S/heads-plist" name))
@@ -227,7 +236,7 @@ See `pretty-hydra-define' and `pretty-hydra-define+'."
                 nil
                 ,(format "pretty-body of %S." name))
               (quote ,body)))
-       (defhydra ,name ,body
+       (defhydra ,name ,(pretty-hydra--remove-custom-opts body)
          ,docstring
          ,@heads))))
 
@@ -252,9 +261,9 @@ pretty hydra specific ones:
     and return a decorated one.  It can be used to further
     customize the hydra docstring.
 
-  - `:quit-key' a key for quitting the hydra.  When specified, an
-    invisible head is created with this key for quitting the
-    hydra.
+  - `:quit-key' a key of list of keys for quitting the hydra.
+    When specified, invisible head(s) are created with the
+    specified keys for quitting the hydra.
 
 HEADS-PLIST is a plist of columns of hydra heads.  The keys of
 the plist should be column names.  The values should be lists of
@@ -315,6 +324,95 @@ Radio is considered on when STATUS is non-nil, otherwise off."
   (s-concat name " " (if status
                          (propertize "(*)" 'face 'pretty-hydra-toggle-on-face)
                        (propertize "( )" 'face 'pretty-hydra-toggle-off-face))))
+
+(defun pretty-hydra--get-cmds (heads-plist)
+  "Return a list of all the commands that appear in HEADS-PLIST.
+s-expressions are not included."
+  (let (cmds)
+    (cl-loop
+     for (_ heads) on heads-plist by #'cddr
+     do (cl-loop
+         for (_ cmd) in heads
+         when (and cmd (symbolp cmd))
+         do (push (cons cmd 'command) cmds)))
+    cmds))
+
+(defconst pretty-hydra--use-package-arg-error
+  ":pretty-hydra wants a heads-plist and optionally a name and/or body in front")
+
+(defun pretty-hydra--normalize-args (default-name args)
+  "Normalize `use-package' `:pretty-hydra' keyword ARGS using DEFAULT-NAME.
+ARGS are normalized to a list of NAME, BODY and HEADS-PLIST.
+DEFAULT-NAME is used if no name is given."
+  (cond
+   ((not (listp args))
+    (use-package-error pretty-hydra--use-package-arg-error))
+   ;; only the heads-plist, use default-name
+   ;; default body
+   ((stringp (car args))
+    `(,default-name nil ,args))
+   ;; only the heads-plist but in a nested list
+   ((and (= (length args) 1) (stringp (caar args)))
+    `(,default-name nil ,@args))
+   ;; body/name + heads-plist
+   ((and (= (length args) 2) (stringp (caadr args)))
+    (if (and (listp (car args))
+             (or (keywordp (caar args))
+                 (null (caar args))))
+        `(,default-name ,@args) ;body + heads, use default-name
+      (cons (car args) (cons nil (cdr args))))) ;name + heads, insert nil body
+   ;; name + body + heads-plist, return as is
+   ((and (= (length args) 3) (stringp (caaddr args)))
+    args)
+   (t
+    (use-package-error pretty-hydra--use-package-arg-error))))
+
+(declare-function use-package-concat "use-package-core")
+(declare-function use-package-process-keywords "use-package-core")
+(declare-function use-package-error "use-package-core")
+(defvar use-package-keywords)
+
+(defun pretty-hydra--use-package-normalize (package _keyword arglists)
+  "Normalize `use-package' `:pretty-hydra' keyword ARGLISTS for PACKAGE."
+  (let* ((default-name (intern (format "%s-hydra" package))))
+    (-map (-partial #'pretty-hydra--normalize-args default-name) arglists)))
+
+(defun pretty-hydra--use-package-handler (package _keyword args rest state)
+  "Generate pretty-hydra defs for PACKAGE using ARGS with `use-package' STATE and REST keywords."
+  (use-package-concat
+   (use-package-process-keywords package rest state)
+   (-map (-lambda ((name body heads-plist))
+           `(pretty-hydra-define+ ,name ,body ,heads-plist))
+         args)))
+
+(defun pretty-hydra--use-package-autoloads (_pkg-name _keyword args)
+  "Return a list of `use-package' autoloads for commands found in ARGS."
+  (-mapcat (-lambda ((_ _ heads-plist)) (pretty-hydra--get-cmds heads-plist)) args))
+
+(defun pretty-hydra--use-package-add-keyword (keyword)
+  "Add the KEYWORD to `use-package-keywords'."
+  (setq use-package-keywords
+          ;; should go in the same location as :bind
+          (cl-loop for item in use-package-keywords
+                   if (eq item :bind-keymap*)
+                   collect :bind-keymap* and collect keyword
+                   else
+                   ;; don't add duplicates
+                   unless (eq item keyword)
+                   collect item)))
+
+(defun pretty-hydra--enable-use-package ()
+  "Enable `use-package' integration.
+Called automatically when `use-package' is present and
+`pretty-hydra-enable-use-package' is set to t."
+  (with-eval-after-load 'use-package-core
+    (pretty-hydra--use-package-add-keyword :pretty-hydra)
+    (defalias 'use-package-normalize/:pretty-hydra #'pretty-hydra--use-package-normalize)
+    (defalias 'use-package-autoloads/:pretty-hydra #'pretty-hydra--use-package-autoloads)
+    (defalias 'use-package-handler/:pretty-hydra #'pretty-hydra--use-package-handler)))
+
+(when pretty-hydra-enable-use-package
+  (pretty-hydra--enable-use-package))
 
 (provide 'pretty-hydra)
 
