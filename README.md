@@ -1,10 +1,10 @@
 # Major Mode Hydra and Pretty Hydra
 
-- `pretty-hydra` makes it easy to create hydras with a pretty table
+- [`pretty-hydra`](#pretty-hydra) makes it easy to create hydras with a pretty table
   layout with some other bells and whistles
-- Based on `pretty-hydra`, `major-mode-hydra` allows you to create
-  pretty hydras with a similar API and summon them with the same key
-  across different major modes.
+- Based on `pretty-hydra`, [`major-mode-hydra`](#major-mode-hydra)
+  allows you to create pretty hydras with a similar API and summon
+  them with the same key across different major modes.
 
 ## Major Mode Hydra
 
@@ -209,6 +209,12 @@ allowed.
 ```
 
 
+### Obsolete `major-mode-hydra-bind`
+
+Previous versions of `major-mode-hydra` had a different API
+`major-mode-hydra-bind` which is now marked as obsolete. Use
+`major-mode-hydra-define+` instead.
+
 ### Customization
 
 #### Default separator
@@ -378,7 +384,7 @@ example redefining the `jp-window` hydra we created above.
 
 ### `use-package` integration
 
-Similar to the `:mode-hydra` keyword above, you can use
+Similar to the `:mode-hydra` keyword [above](#use-package-integration), you can use
 `:pretty-hydra` keyword in `use-package` to create pretty hydras with
 commands autoloaded. Like `:mode-hydra`, it also supports omitting
 `name` and/or `body`. When the name is omitted, it defaults to
