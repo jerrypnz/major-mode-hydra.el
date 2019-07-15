@@ -1,3 +1,11 @@
+# Major Mode Hydra and Pretty Hydra
+
+- `pretty-hydra` makes it easy to create hydras with a pretty table
+  layout with some other bells and whistles
+- Based on `pretty-hydra`, `major-mode-hydra` allows you to create
+  pretty hydras with a similar API and summon them with the same key
+  across different major modes.
+
 ## Major Mode Hydra
 
 [![MELPA](https://melpa.org/packages/major-mode-hydra-badge.svg)](https://melpa.org/#/major-mode-hydra)
@@ -78,10 +86,22 @@ Now when your are in a elisp buffer, press `M-SPC` will bring up this
 
 ### `major-mode-hydra-define`
 
-`major-mode-hydra-define` is based on `pretty-hydra-define` and has
-the same API. To get detailed documentation, see the [Pretty
-Hydra](#pretty-hydra) section below, or press `C-h f` then type
-`pretty-hydra-define` to view it in Emacs.
+`major-mode-hydra-define` takes 3 arguments, the `mode`, the `body`
+and the `heads-plist`.
+
+#### `mode`
+
+`mode` is the name of the major mode, e.g. `emacs-lisp-mode`. It can
+also be a list of modes. This is useful in cases where multiple major
+mode share a lot of commands, e.g. `clojure-mode`,
+`clojurescript-mode` and `clojurec-mode`.
+
+#### `body`
+
+`body` is the hydra body plist as defined by `defhydra`. Apart from
+what `defhydra`'s options, `major-mode-hydra-define` has a few
+additional options. See the [Pretty Hydra](#pretty-hydra) section
+below for details.
 
 Some hydra body options have configurable default values if they are
 not specified:
@@ -103,7 +123,7 @@ not specified:
 - A `:title` is generated using `major-mode-hydra-title-generator` if
   there is one
 
-All these options can be overriden by specifying them in
+All these options can be overridden by specifying them in
 `major-mode-hydra-define`, e.g.
 
 ```elisp
@@ -114,11 +134,86 @@ All these options can be overriden by specifying them in
     ("l" cider-load-file "file" :color red))))
 ```
 
+#### `heads-plist`
+
+`heads-plist` is a plist of column names (strings) to list of hydra
+heads, as the above examples show. See the [Pretty
+Hydra](#pretty-hydra) section below for details, or press `C-h f` then
+type `pretty-hydra-define` to view it in Emacs.
+
+### `major-mode-hydra-define+`
+
+Similar to `defhydra+`, `major-mode-hydra-define+` allows you to add
+additional heads to an existing hydra and update the hint. This is
+useful in cases where command from multiple packages contribute to the
+same hydra. For me personally this is particularly useful in
+`clojure-mode` + `cider` / `inf-clojure`.
+
+It takes the same parameter as `major-mode-hydra-define`. Existing
+`body` is used if `nil` is passed to it. `head-plist` is merged into
+the existing one.
+
+### `use-package` Integration
+
+If you use `use-package`, you can use the `:mode-hydra` keyword to
+create major mode hydras. Like `:bind`, it automatically generates
+autoloads for commands that appear in the hydra. It also allows
+omitting `mode` name (defaults to package name) and/or `body`
+(defaults to `nil`). For example, all the following 3 forms are
+allowed.
+
+- `heads-plist` only
+
+``` elisp
+(use-package go-mode
+  :ensure t
+  :mode "\\.go\\'"
+
+  :mode-hydra
+  ("Doc"
+   (("d" godoc-at-point "doc at point"))
+   "Imports"
+   (("ia" go-import-add "add")
+    ("ir" go-remove-unused-imports "cleanup"))))
+```
+
+- `body` and `heads-plist`
+
+``` elisp
+(use-package go-mode
+  :ensure t
+  :mode "\\.go\\'"
+  :mode-hydra
+  ((:title "Go Commands")
+   ("Doc"
+    (("d" godoc-at-point "doc at point"))
+    "Imports"
+    (("ia" go-import-add "add")
+     ("ir" go-remove-unused-imports "cleanup")))))
+```
+
+- `mode`, `body` and `heads-plist`
+
+``` elisp
+(use-package go-mode
+  :ensure t
+  :mode "\\.go\\'"
+  :mode-hydra
+  (go-mode
+   (:title "Go Commands")
+   ("Doc"
+    (("d" godoc-at-point "doc at point"))
+    "Imports"
+    (("ia" go-import-add "add")
+     ("ir" go-remove-unused-imports "cleanup")))))
+```
+
+
 ### Customization
 
 #### Default separator
 
-You can customize the separator by setting the custom varable
+You can customize the separator by setting the custom variable
 `major-mode-hydra-separator`. It should be set to a string containing
 a single character which is used to draw the separator line. [Unicode
 box drawing
@@ -128,7 +223,7 @@ recommended.
 #### Default quit key
 
 You can set `major-mode-hydra-invisible-quit-key` to a key sequence
-which can be used for quitting the hydra. This key doesn't show up in
+which can be used for quitting the hydra. This key does not show up in
 the docstring. The key being used is not allowed in
 `major-mode-hydra-bind`, otherwise there can be conflicts.
 
@@ -193,9 +288,16 @@ The following is an example:
     ("0" jp-zoom-default "reset"))))
 ```
 
-Apart from hydra's options like `:hint` or `:color`, there are
-additional options that allow you to customize the generated body
-docstring:
+
+### `pretty-hydra-define`
+
+`pretty-hydra-define` takes 3 arguments, the `name`, the `body` and
+the `heads-plist`.
+
+#### Extended `body` and `head` options
+
+Apart from `defhydra`'s options like `:color`, there are additional
+options that allow you to customize the generated body docstring:
 
 - `:title` adds a title to the docstring. If it is a elisp variable or
   sexp, it's evaluated every time the hydra is opened or refreshed.
@@ -204,13 +306,13 @@ docstring:
   and returns a new docstring that's gonna be used. You can do things
   like generating a border etc.
 - `:quit-key` adds a invisible hydra head for quitting the hydra. It
-  can be very useful when you set `:foreign-keys` to `warn`.
+  can be useful when you set `:foreign-keys` to `warn`.
 
 Hint for each head can be dynamic, either a symbol or an sexp which
 gets evaluated dynamically when rendering the hydra. Dynamic hint is
 always padded with space, or trimmed so that its length is fixed. This
-is to ensure the pretty layout doesn't get broken. You can specify the
-expected `:width` in head plists.
+is to ensure the pretty layout does not get broken. You can specify
+the expected `:width` in head plists.
 
 Dynamic hints are useful in toggles where it shows different hint
 based on the state of the toggle. pretty-hydra has built-in support
@@ -255,6 +357,8 @@ The following is an example toggles hydra:
 The on/off faces can be customized through
 `pretty-hydra-toggle-on-face` and `pretty-hydra-toggle-off-face`.
 
+### `pretty-hydra-define+`
+
 You can use `pretty-hydra-define+` in order to add heads to an already
 existing `pretty-hydra`. New heads are appended to existing columns,
 if their names match (otherwise new columns are created). Here's an
@@ -263,11 +367,36 @@ example redefining the `jp-window` hydra we created above.
 ```elisp
 (pretty-hydra-define+ jp-window ()
   (;; these heads are added to the existing "Windows" column
-   "Windows" (("r" transpose-frame "rotate")
-              ("z" zone "zone out!"))
+   "Windows"
+   (("r" transpose-frame "rotate")
+    ("z" zone "zone out!"))
    ;; this is a new column, which gets added
-   "Appearance" (("f" set-frame-font "font")
-                 ("t" load-theme "theme"))))
+   "Appearance"
+   (("f" set-frame-font "font")
+    ("t" load-theme "theme"))))
+```
+
+### `use-package` integration
+
+Similar to the `:mode-hydra` keyword above, you can use
+`:pretty-hydra` keyword in `use-package` to create pretty hydras with
+commands autoloaded. Like `:mode-hydra`, it also supports omitting
+`name` and/or `body`. When the name is omitted, it defaults to
+`<package>-hydra`. The following is an example:
+
+``` elisp
+(use-package helpful
+  :ensure t
+  :pretty-hydra
+  ((:color teal :quit-key "q")
+   ("Helpful"
+    (("f" helpful-callable "callable")
+     ("v" helpful-variable "variable")
+     ("k" helpful-key "key")
+     ("c" helpful-command "command")
+     ("d" helpful-at-point "thing at point"))))
+
+  :bind ("C-h" . helpful-hydra/body))
 ```
 
 ## License
