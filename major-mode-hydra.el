@@ -4,8 +4,8 @@
 
 ;; Author: Jerry Peng <pr2jerry@gmail.com>
 ;; URL: https://github.com/jerrypnz/major-mode-hydra.el
-;; Version: 0.2.0
-;; Package-Requires: ((dash "2.15.0") (pretty-hydra "0.1.1") (emacs "25"))
+;; Version: 0.2.1
+;; Package-Requires: ((dash "2.15.0") (pretty-hydra "0.2.0") (emacs "25"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -96,7 +96,7 @@ Refer to `pretty-hydra-define' for documentation about BODY and HEADS-PLIST."
   (declare (indent defun))
   (if (listp mode)
       `(progn
-         ,@(-map (lambda (m) (major-mode-hydra--generate m body heads-plist t))
+         ,@(-map (lambda (m) (major-mode-hydra--generate m body (copy-tree heads-plist) t))
                  mode))
     (major-mode-hydra--generate mode body heads-plist t)))
 
@@ -113,7 +113,7 @@ Refer to `pretty-hydra-define' for documentation about BODY and HEADS-PLIST."
   (declare (indent defun))
   (if (listp mode)
       `(progn
-         ,@(-map (lambda (m) (major-mode-hydra--generate m body heads-plist))
+         ,@(-map (lambda (m) (major-mode-hydra--generate m body (copy-tree heads-plist)))
                  mode))
     (major-mode-hydra--generate mode body heads-plist)))
 
