@@ -96,7 +96,7 @@ Refer to `pretty-hydra-define' for documentation about BODY and HEADS-PLIST."
   (declare (indent defun))
   (if (listp mode)
       `(progn
-         ,@(-map (lambda (m) (major-mode-hydra--generate m body heads-plist t))
+         ,@(-map (lambda (m) (major-mode-hydra--generate m body (copy-tree heads-plist) t))
                  mode))
     (major-mode-hydra--generate mode body heads-plist t)))
 
@@ -113,7 +113,7 @@ Refer to `pretty-hydra-define' for documentation about BODY and HEADS-PLIST."
   (declare (indent defun))
   (if (listp mode)
       `(progn
-         ,@(-map (lambda (m) (major-mode-hydra--generate m body heads-plist))
+         ,@(-map (lambda (m) (major-mode-hydra--generate m body (copy-tree heads-plist)))
                  mode))
     (major-mode-hydra--generate mode body heads-plist)))
 
