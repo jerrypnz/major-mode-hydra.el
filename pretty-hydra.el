@@ -99,10 +99,10 @@
 (defun pretty-hydra--cell-docstring (width head)
   "Generate docstring for a HEAD with given WIDTH."
   (-let* (((key cmd hint &plist :toggle toggle-p) head)
-          (key-label (s-replace "^" "\\^" key))
+          (escaped-key (s-replace "^" "\\^" key))
           ;; If any character gets escpaed, we need to increase the
           ;; width as well because the espace char \ is not displayed.
-          (width (+ width (- (length key-label) (length key)))))
+          (width (+ width (- (length escaped-key) (length key)))))
     (cond
      ((char-or-string-p hint)
       (if toggle-p
@@ -112,15 +112,17 @@
                                (t                `(bound-and-true-p ,toggle-p))))
                  (expr (prin1-to-string `(pretty-hydra-toggle ,hint ,status-expr)))
                  (width (+ width (- (+ (length expr) 2) (+ (length hint) 4)))))
-            (list (s-pad-right width " " (format " _%s_: %%s%s" key-label expr))))
-        (list (s-pad-right width " " (format " _%s_: %s" key-label hint))))) ;; string hint
+            (list (s-pad-right width " " (format " _%s_: %%s%s" escaped-key expr))))
+        (-let* ((escaped-hint (s-replace "^" "\\^" hint))
+                (width (+ width (- (length escaped-hint) (length hint)))))
+          (list (s-pad-right width " " (format " _%s_: %s" escaped-key escaped-hint)))))) ;; string hint
 
      ((or (null hint))
       nil)  ;; no hint, doesn't show it in docstring at all
 
      (t
       (list (format " _%s_: %%s%s"
-                    key-label
+                    escaped-key
                     (prin1-to-string
                      `(pretty-hydra--pad-or-trunc-hint ,hint ,(- width (length key) 5)))))))))
 
