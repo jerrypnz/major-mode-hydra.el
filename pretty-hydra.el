@@ -4,7 +4,7 @@
 
 ;; Author: Jerry Peng <pr2jerry@gmail.com>
 ;; URL: https://github.com/jerrypnz/major-mode-hydra.el
-;; Version: 0.2.0
+;; Version: 0.2.2
 ;; Package-Requires: ((hydra "0.15.0") (s "1.12.0") (dash "2.15.0") (dash-functional "1.2.0") (emacs "24"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -98,7 +98,11 @@
 
 (defun pretty-hydra--cell-docstring (width head)
   "Generate docstring for a HEAD with given WIDTH."
-  (-let [(key cmd hint &plist :toggle toggle-p) head]
+  (-let* (((key cmd hint &plist :toggle toggle-p) head)
+          (escaped-key (s-replace "^" "\\^" key))
+          ;; If any character gets escpaed, we need to increase the
+          ;; width as well because the espace char \ is not displayed.
+          (width (+ width (- (length escaped-key) (length key)))))
     (cond
      ((char-or-string-p hint)
       (if toggle-p
@@ -108,15 +112,17 @@
                                (t                `(bound-and-true-p ,toggle-p))))
                  (expr (prin1-to-string `(pretty-hydra-toggle ,hint ,status-expr)))
                  (width (+ width (- (+ (length expr) 2) (+ (length hint) 4)))))
-            (list (s-pad-right width " " (format " _%s_: %%s%s" key expr))))
-        (list (s-pad-right width " " (format " _%s_: %s" key hint))))) ;; string hint
+            (list (s-pad-right width " " (format " _%s_: %%s%s" escaped-key expr))))
+        (-let* ((escaped-hint (s-replace "^" "\\^" hint))
+                (width (+ width (- (length escaped-hint) (length hint)))))
+          (list (s-pad-right width " " (format " _%s_: %s" escaped-key escaped-hint)))))) ;; string hint
 
      ((or (null hint))
       nil)  ;; no hint, doesn't show it in docstring at all
 
      (t
       (list (format " _%s_: %%s%s"
-                    key
+                    escaped-key
                     (prin1-to-string
                      `(pretty-hydra--pad-or-trunc-hint ,hint ,(- width (length key) 5)))))))))
 
