@@ -72,6 +72,8 @@
 
 (ert-deftest pretty-hydra-test--cell-docstring ()
   (dolist (test '(((" _a_: c1            ") . ("a" nil "c1"))
+                  ((" _\\^_: c1            ") . ("^" nil "c1"))
+                  ((" _C-\\^_: c1          ") . ("C-^" nil "c1"))
                   ((" _a_: %s(pretty-hydra-toggle \"c1\" (bound-and-true-p c1))        ") . ("a" c1 "c1" :toggle t))
                   ((" _a_: %s(pretty-hydra-toggle \"c1\" (bound-and-true-p status-var))        ") . ("a" c1 "c1" :toggle status-var))
                   ((" _a_: %s(pretty-hydra-toggle \"c1\" (status-expr))        ") . ("a" c1 "c1" :toggle (status-expr)))
