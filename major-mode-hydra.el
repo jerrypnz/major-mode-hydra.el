@@ -134,10 +134,15 @@ exactly the same structure as that in `pretty-hydra-define' or
 
 (defun major-mode-hydra-dispatch (mode)
   "Summon the hydra for given MODE (if there is one)."
-  (let ((hydra (major-mode-hydra--body-name-for mode)))
-    (if (fboundp hydra)
-        (call-interactively hydra)
-      (message "Major mode hydra not found for %s" mode))))
+  (let ((orig-mode mode))
+    (catch 'done
+      (while mode
+        (let ((hydra (major-mode-hydra--body-name-for mode)))
+          (when (fboundp hydra)
+            (call-interactively hydra)
+            (throw 'done t)))
+        (setq mode (get mode 'derived-mode-parent)))
+      (user-error "Major mode hydra not found for %s or its parent modes" orig-mode))))
 
 ;;;###autoload
 (defun major-mode-hydra ()
