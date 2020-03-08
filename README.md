@@ -1,7 +1,8 @@
 # Major Mode Hydra and Pretty Hydra
 
-- [`pretty-hydra`](#pretty-hydra) makes it easy to create hydras with a pretty table
-  layout with some other bells and whistles
+- [`pretty-hydra`](#pretty-hydra) provides a macro
+  `pretty-hydra-define` to make it easy to create hydras with a pretty
+  table layout with some other bells and whistles
 - Based on `pretty-hydra`, [`major-mode-hydra`](#major-mode-hydra)
   allows you to create pretty hydras with a similar API and summon
   them with the same key across different major modes.
@@ -258,7 +259,10 @@ generator:
 [![MELPA Stable](https://stable.melpa.org/packages/pretty-hydra-badge.svg)](https://stable.melpa.org/#/pretty-hydra)
 
 This package includes `pretty-hydra.el` which is used by
-`major-mode-hydra.el` but can also be installed and used on its own.
+`major-mode-hydra.el` but can also be installed and used on its
+own. It provides a macro `pretty-hydra-define` that takes columns of
+hydra heads and expands to `defhydra` calls with pretty docstrings
+generated from the heads.
 
 The following is an example:
 
