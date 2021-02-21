@@ -5,7 +5,7 @@
 ;; Author: Jerry Peng <pr2jerry@gmail.com>
 ;; URL: https://github.com/jerrypnz/major-mode-hydra.el
 ;; Version: 0.2.2
-;; Package-Requires: ((hydra "0.15.0") (s "1.12.0") (dash "2.15.0") (dash-functional "1.2.0") (emacs "24"))
+;; Package-Requires: ((hydra "0.15.0") (s "1.12.0") (dash "2.18.0") (emacs "24"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -32,7 +32,6 @@
 ;;; Code:
 
 (require 'dash)
-(require 'dash-functional)
 (require 's)
 (require 'hydra)
 
