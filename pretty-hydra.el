@@ -5,7 +5,7 @@
 ;; Author: Jerry Peng <pr2jerry@gmail.com>
 ;; URL: https://github.com/jerrypnz/major-mode-hydra.el
 ;; Version: 0.2.2
-;; Package-Requires: ((hydra "0.15.0") (s "1.12.0") (dash "2.18.0") (emacs "24"))
+;; Package-Requires: ((hydra "0.15.0") (s "1.12.0") (dash "2.18.0") (emacs "24") (compat "29.1.4.1"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -31,6 +31,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'dash)
 (require 's)
 (require 'hydra)
@@ -204,10 +205,11 @@ Two heads are considered duplicate if they have the same key."
 The result is a new plist."
   (let ((cols (cl-loop for (key _value) on new by 'cddr collect key)))
     (-reduce-from (lambda (acc x)
-                    (lax-plist-put acc x
-                                   (pretty-hydra--dedupe-heads
-                                    (append (lax-plist-get acc x)
-                                            (lax-plist-get new x)))))
+                    (plist-put acc x
+                               (pretty-hydra--dedupe-heads
+                                (append (plist-get acc x #'equal)
+                                        (plist-get new x #'equal)))
+                               #'equal))
                   old
                   cols)))
 
@@ -230,7 +232,7 @@ See `pretty-hydra-define' and `pretty-hydra-define+'."
                         (append heads (--map (list it nil) quit-key))
                       (append heads `((,quit-key nil))))
                   heads))
-         (body (lax-plist-put body :hint nil)))
+         (body (plist-put body :hint nil #'equal)))
     `(progn
        (eval-and-compile
          (set (defvar ,(intern (format "%S/heads-plist" name))
