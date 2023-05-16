@@ -36,7 +36,7 @@
 (require 'hydra)
 
 (defcustom pretty-hydra-enable-use-package t
-  "Enable use-package integration when set to t."
+  "Enable `use-package' integration when set to t."
   :type 'boolean
   :group 'pretty-hydra)
 
@@ -330,12 +330,12 @@ one if specified.  Arguments are the same as `pretty-hydra-define'."
 
 (defface pretty-hydra-toggle-on-face
   '((t (:inherit 'font-lock-keyword-face)))
-  "Face used to render titles for pretty hydra"
+  "Face used to render titles for pretty hydra."
   :group 'pretty-hydra)
 
 (defface pretty-hydra-toggle-off-face
   '((t (:inherit 'font-lock-comment-face)))
-  "Face used to render titles for pretty hydra"
+  "Face used to render titles for pretty hydra."
   :group 'pretty-hydra)
 
 ;;;###autoload
