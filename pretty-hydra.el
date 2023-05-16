@@ -44,8 +44,8 @@
   "Default specification to format the title and body into a hydra docstring.
 It should contain two `%s'. It can be used to customize the
 whitespace around and between the title and the body. It is only
-used if a title is provided. Can be overriden in the
-prett-hydra body via `:title-body-format-spec'."
+used if a title is provided. Can be overridden in the
+pretty-hydra body via `:title-body-format-spec'."
   :type 'string
   :group 'pretty-hydra)
 
@@ -180,10 +180,11 @@ This is used to create the HEADS to be passed to `defhydra'."
        (-map (-lambda ((key cmd _ . opts))
                (-concat (list key cmd) (pretty-hydra--remove-custom-opts opts))))))
 
-(defun pretty-hydra--maybe-add-title (title docstring &optional title-body-format-spec)
-  "Add TITLE to the DOCSTRING if it's not nil, other return DOCSTRING unchanged.
+(defun pretty-hydra--maybe-add-title (title title-body-format-spec docstring)
+  "Add TITLE to DOCSTRING according to TITLE-BODY-FORMAT-SPEC.
 
-TITLE-BODY-FORMAT-SPEC allows to specify how the TITLE and BODY are combined."
+If TITLE-BODY-FORMAT-SPEC is nil, the value of
+`pretty-hydra-default-title-body-format-spec' is used."
   (if (null title)
       docstring
     (let ((format-spec (if title-body-format-spec
@@ -234,10 +235,9 @@ See `pretty-hydra-define' and `pretty-hydra-define+'."
                         #'identity))
          (title-body-format-spec (plist-get body :title-body-format-spec))
          (quit-key  (plist-get body :quit-key))
-         (docstring (->> (pretty-hydra--maybe-add-title
-                          title
-                          (pretty-hydra--gen-body-docstring separator heads-plist)
-                          title-body-format-spec)
+         (docstring (->> heads-plist
+                         (pretty-hydra--gen-body-docstring separator)
+                         (pretty-hydra--maybe-add-title title title-body-format-spec)
                          (funcall formatter)
                          (s-prepend "\n"))) ;; This is required, otherwise the docstring won't show up correctly
          (heads (pretty-hydra--get-heads heads-plist))
