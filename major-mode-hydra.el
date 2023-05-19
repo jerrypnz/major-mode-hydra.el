@@ -56,8 +56,8 @@ Set to nil to stop generating such heads."
 
 (defun major-mode-hydra--put-if-absent (plist prop val)
   "Set PROP to VAL if it's absent in PLIST."
-  (when (not (plist-get plist prop #'equal))
-    (plist-put plist prop val #'equal))
+  (when (not (compat-call plist-get plist prop #'equal))
+    (compat-call plist-put plist prop val #'equal))
   plist)
 
 (defun major-mode-hydra--name-for (mode)
@@ -75,7 +75,7 @@ Overwrite existing hydra if OVERWRITE-P is t, otherwise add new heads to it."
          (title (when (functionp major-mode-hydra-title-generator)
                   (funcall major-mode-hydra-title-generator mode)))
          (body (-> body
-                   (plist-put :hint nil #'equal)
+                   (compat-call plist-put :hint nil #'equal)
                    (major-mode-hydra--put-if-absent :color 'teal)
                    (major-mode-hydra--put-if-absent :title title)
                    (major-mode-hydra--put-if-absent :separator major-mode-hydra-separator)

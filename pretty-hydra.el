@@ -205,22 +205,22 @@ Two heads are considered duplicate if they have the same key."
 The result is a new plist."
   (let ((cols (cl-loop for (key _value) on new by 'cddr collect key)))
     (-reduce-from (lambda (acc x)
-                    (plist-put acc x
-                               (pretty-hydra--dedupe-heads
-                                (append (plist-get acc x #'equal)
-                                        (plist-get new x #'equal)))
-                               #'equal))
+                    (compat-call plist-put acc x
+                                 (pretty-hydra--dedupe-heads
+                                  (append (compat-call plist-get acc x #'equal)
+                                          (compat-call plist-get new x #'equal)))
+                                 #'equal))
                   old
                   cols)))
 
 (defun pretty-hydra--generate (name body heads-plist)
   "Helper function to generate expressions with given NAME, BODY, HEADS-PLIST.
 See `pretty-hydra-define' and `pretty-hydra-define+'."
-  (let* ((separator (or (plist-get body :separator) "─"))
-         (title     (plist-get body :title))
-         (formatter (or (plist-get body :formatter)
+  (let* ((separator (or (compat-call plist-get body :separator) "─"))
+         (title     (compat-call plist-get body :title))
+         (formatter (or (compat-call plist-get body :formatter)
                         #'identity))
-         (quit-key  (plist-get body :quit-key))
+         (quit-key  (compat-call plist-get body :quit-key))
          (docstring (->> heads-plist
                          (pretty-hydra--gen-body-docstring separator)
                          (pretty-hydra--maybe-add-title title)
@@ -232,7 +232,7 @@ See `pretty-hydra-define' and `pretty-hydra-define+'."
                         (append heads (--map (list it nil) quit-key))
                       (append heads `((,quit-key nil))))
                   heads))
-         (body (plist-put body :hint nil #'equal)))
+         (body (compat-call plist-put body :hint nil #'equal)))
     `(progn
        (eval-and-compile
          (set (defvar ,(intern (format "%S/heads-plist" name))
