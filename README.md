@@ -315,6 +315,12 @@ options that allow you to customize the generated body docstring:
   function that takes the docstring `pretty-hydra-define` generates,
   and returns a new docstring that's gonna be used. You can do things
   like generating a border etc.
+- `:title-body-format-spec`. An format specification string that is formatted
+  with the title and the body of the hydra into a docstring. It is therefore
+  only used if `:title` is provided. It should contain two `%s`. It can be used
+  to customize the whitespace around and between the title and the body. Its
+  default can changed by customizing
+  `pretty-hydra-default-title-body-format-spec`.
 - `:quit-key` adds a invisible hydra head for quitting the hydra. It
   can be useful when you set `:foreign-keys` to `warn`.
 
