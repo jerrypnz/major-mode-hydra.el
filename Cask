@@ -7,5 +7,6 @@
 (development
  (depends-on "hydra")
  (depends-on "dash")
+ (depends-on "compat")
  (depends-on "use-package")
  (depends-on "ert-runner"))

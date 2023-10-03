@@ -32,6 +32,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'dash)
 (require 'pretty-hydra)
 
@@ -74,8 +75,7 @@ Overwrite existing hydra if OVERWRITE-P is t, otherwise add new heads to it."
   (let* ((hydra-name (major-mode-hydra--name-for mode))
          (title (when (functionp major-mode-hydra-title-generator)
                   (funcall major-mode-hydra-title-generator mode)))
-         (body (-> body
-                   (compat-call plist-put :hint nil #'equal)
+         (body (-> (compat-call plist-put body :hint nil #'equal)
                    (major-mode-hydra--put-if-absent :color 'teal)
                    (major-mode-hydra--put-if-absent :title title)
                    (major-mode-hydra--put-if-absent :separator major-mode-hydra-separator)
