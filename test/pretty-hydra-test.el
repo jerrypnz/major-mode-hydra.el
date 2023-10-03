@@ -82,7 +82,7 @@
                   ((" _a_: %s(pretty-hydra-toggle \"c1\" (status-expr))        ") . ("a" c1 "c1" :toggle (status-expr)))
                   ((" _a_: %s(pretty-hydra--pad-or-trunc-hint c1 14)") . ("a" nil c1))
                   ((" _a_: %s(pretty-hydra--pad-or-trunc-hint (c1) 14)") . ("a" nil (c1)))
-                  ((" _a_: %s(pretty-hydra--pad-or-trunc-hint (c1 (quote foo)) 14)") . ("a" nil (c1 'foo)))
+                  ((" _a_: %s(pretty-hydra--pad-or-trunc-hint (c1 'foo) 14)") . ("a" nil (c1 'foo)))
                   (nil   . ("a" nil))))
     (-let [(expected . head) test]
       (should (equal expected (pretty-hydra--cell-docstring 20 head))))))
@@ -145,7 +145,7 @@
                   ("\n %s(foo \"bar\")\ndocstring" . (foo "bar"))
                   ("docstring" . nil)))
     (-let [(expected . title) test]
-      (should (equal expected (pretty-hydra--maybe-add-title title "docstring"))))))
+      (should (equal expected (pretty-hydra--maybe-add-title title nil "docstring"))))))
 
 (ert-deftest pretty-hydra-test--get-cmds ()
   (should (equal '((bar . command) (foo . command))
