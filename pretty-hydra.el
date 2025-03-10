@@ -240,8 +240,7 @@ See `pretty-hydra-define' and `pretty-hydra-define+'."
          (docstring (->> heads-plist
                          (pretty-hydra--gen-body-docstring separator)
                          (pretty-hydra--maybe-add-title title title-body-format-spec)
-                         (funcall formatter)
-                         (s-prepend "\n"))) ;; This is required, otherwise the docstring won't show up correctly
+                         (funcall formatter)))
          (heads (pretty-hydra--get-heads heads-plist))
          (heads (if quit-key
                     (if (listp quit-key)
